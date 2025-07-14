@@ -1,0 +1,60 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
+    "@mui/x-data-grid": "^8.7.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^6.28.0",
+    "react-scripts": "5.0.1",
+    "recharts": "^3.0.2",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "cypress": "^13.6.0",
+    "start-server-and-test": "^2.0.3"
+  },
+  "scripts": {
+    "start": "set PORT=55555 && react-scripts start",
+    "build": "react-scripts build",
+    "build:azure": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
+    "build:production": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "test:e2e": "start-server-and-test start http://localhost:55555 cypress:run",
+    "test:e2e:open": "start-server-and-test start http://localhost:55555 cypress:open",
+    "cypress:open:debug": "cross-env DEBUG=cypress:* npx cypress open",
+    "cypress:run:debug": "cross-env DEBUG=cypress:* npx cypress run",
+    "serve": "npx serve -s build -l 3000"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

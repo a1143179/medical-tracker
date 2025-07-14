@@ -1,0 +1,4 @@
+/* Only keep minimal CSS for test selectors or minor overrides */
+.google-signin-button {
+  /* No custom styles needed, but keep for Cypress test selector */
+} 

@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": ".NET Backend on Port 3000",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/backend/bin/Debug/net9.0/backend.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/backend",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "http://localhost:3000"
+            },
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}

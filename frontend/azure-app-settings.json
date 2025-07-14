@@ -1,0 +1,35 @@
+{
+  "appSettings": [
+    {
+      "name": "WEBSITE_NODE_DEFAULT_VERSION",
+      "value": "20.11.0"
+    },
+    {
+      "name": "WEBSITE_RUN_FROM_PACKAGE",
+      "value": "1"
+    },
+    {
+      "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+      "value": "true"
+    },
+    {
+      "name": "NODE_ENV",
+      "value": "production"
+    },
+    {
+      "name": "GENERATE_SOURCEMAP",
+      "value": "false"
+    },
+    {
+      "name": "CI",
+      "value": "false"
+    }
+  ],
+  "connectionStrings": [],
+  "metadata": [
+    {
+      "name": "CURRENT_STACK",
+      "value": "node"
+    }
+  ]
+} 

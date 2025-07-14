@@ -1,0 +1,50 @@
+name: Deploy Frontend Docker to Azure
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+
+env:
+  AZURE_WEBAPP_NAME: medicaltrackerfrontend
+  ACR_NAME: medicaltrackeracr
+  RESOURCE_GROUP: medical-tracker-rg
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Login to ACR
+      run: az acr login --name ${{ env.ACR_NAME }}
+      
+    - name: Build and push Docker image
+      run: |
+        cd frontend
+        docker build -t ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }} .
+        docker push ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }}
+        
+    - name: Deploy to Azure Web App for Containers
+      run: |
+        az webapp config container set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --docker-custom-image-name ${{ env.ACR_NAME }}.azurecr.io/frontend:${{ github.sha }}
+        
+    - name: Health check
+      run: |
+        sleep 30
+        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health || exit 1 

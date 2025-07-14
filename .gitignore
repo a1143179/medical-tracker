@@ -1,0 +1,20 @@
+# Ignore node_modules in project root
+node_modules/ 
+
+# Ignore backend build artifacts
+backend/obj/
+backend/bin/ 
+backend/logs/
+
+# Ignore backend static files
+backend/wwwroot/
+
+# Ignore development settings with secrets
+backend/appsettings.Development.json
+
+# Ignore test project build artifacts
+backend/Tests/obj/
+backend/Tests/bin/
+
+build/ 
+
