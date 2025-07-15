@@ -159,7 +159,7 @@ public class AuthController : ControllerBase
         if (user == null)
         {
             _logger.LogInformation("Creating new user: {Email}, {Name}", email, name);
-            user = new User { Email = email, Name = name };
+            user = new User { Email = email ?? string.Empty, Name = name ?? string.Empty };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
         }
