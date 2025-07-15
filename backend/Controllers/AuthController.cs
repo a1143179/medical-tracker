@@ -35,6 +35,7 @@ public class AuthController : ControllerBase
     [HttpGet("login")]
     public IActionResult Login(string returnUrl = "/", bool rememberMe = false)
     {
+        _logger.LogInformation("/api/auth/login hit with returnUrl={ReturnUrl}, rememberMe={RememberMe}", returnUrl, rememberMe);
         // Check if Google OAuth is configured
         var googleClientId = _configuration["Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         var googleClientSecret = _configuration["Google:ClientSecret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
