@@ -135,11 +135,16 @@ public class AuthController : ControllerBase
         }
 
         // Extract user info from claims
-        var emailClaim = authenticateResult.Principal.FindFirst(ClaimTypes.Email);
-        var nameClaim = authenticateResult.Principal.FindFirst(ClaimTypes.Name);
+        string email = null;
+        string name = null;
 
-        var email = emailClaim?.Value;
-        var name = nameClaim?.Value;
+        var emailClaim = authenticateResult.Principal.FindFirst(ClaimTypes.Email);
+        if (emailClaim != null)
+            email = emailClaim.Value;
+
+        var nameClaim = authenticateResult.Principal.FindFirst(ClaimTypes.Name);
+        if (nameClaim != null)
+            name = nameClaim.Value;
 
         _logger.LogInformation("OAuth callback claims: email={Email}, name={Name}", email, name);
 
