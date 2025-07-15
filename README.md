@@ -1,21 +1,21 @@
-# Blood Sugar History Tracker
+# Medical Tracker
 
-A comprehensive blood sugar tracking application with React frontend and .NET backend.
+A comprehensive blood sugar tracking application with React frontend and .NET backend, deployed as a single container from GitHub Container Registry.
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- **Docker Desktop** - For PostgreSQL database
-- **Node.js** (v16+) - For React frontend
-- **.NET 9 SDK** - For backend API
+- **Docker Desktop** - For PostgreSQL database and container deployment
+- **Node.js** (v16+) - For React frontend development
+- **.NET 9 SDK** - For backend API development
 - **Git Bash** (recommended) or **Command Prompt/PowerShell**
 
 ### First-Time Setup
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/a1143179/medical-tracker.git
    cd medicaltracker
    ```
 
@@ -33,13 +33,69 @@ A comprehensive blood sugar tracking application with React frontend and .NET ba
 4. **Start the application**:
    ```bash
    # On Windows
-   start-dev.bat
+   start-dev.ps1
    
    # On Linux/Mac
    ./start-dev.sh
    ```
 
-5. **Access the application** at `http://localhost:3000`
+5. **Access the application** at `http://localhost:55556`
+
+## 🐳 Container Deployment
+
+### Pull from GitHub Container Registry
+
+The application is available as a single container from GitHub Container Registry:
+
+```bash
+# Pull the latest container
+docker pull ghcr.io/a1143179/medical-tracker/medicaltracker:latest
+
+# Run the container
+docker run -d \
+  --name medicaltracker \
+  -p 8080:80 \
+  -e ConnectionStrings__DefaultConnection="your-database-connection" \
+  -e Google__ClientId="your-google-client-id" \
+  -e Google__ClientSecret="your-google-client-secret" \
+  -e JWT__Key="your-jwt-secret" \
+  ghcr.io/a1143179/medical-tracker/medicaltracker:latest
+```
+
+### Azure Deployment
+
+The application is configured for Azure Web App for Containers:
+
+1. **Create Azure Web App for Containers**
+2. **Configure container settings**:
+   - **Image**: `ghcr.io/a1143179/medical-tracker/medicaltracker:latest`
+   - **Registry**: `https://ghcr.io`
+   - **Port**: `8080`
+
+3. **Set environment variables**:
+   ```
+   ASPNETCORE_ENVIRONMENT=Production
+   WEBSITES_PORT=8080
+   ConnectionStrings__DefaultConnection=your-database-connection
+   Google__ClientId=your-google-client-id
+   Google__ClientSecret=your-google-client-secret
+   JWT__Key=your-jwt-secret
+   ```
+
+### Pull Script
+
+Use the provided script to pull containers locally:
+
+```bash
+# Set environment variables
+export GITHUB_USERNAME=your-github-username
+export GITHUB_TOKEN=your-github-token
+
+# Run the pull script
+./pull-ghcr-containers.sh
+```
+
+## 🔧 Development Environment
 
 ### Environment Setup
 
@@ -50,8 +106,8 @@ This project uses Google OAuth for authentication. You need to set up Google OAu
 1. **For Local Development**:
    - Copy `backend/appsettings.Development.template.json` to `backend/appsettings.Development.json`
    - Replace the placeholder values with your actual Google OAuth credentials:
-     - `YOUR_GOOGLE_CLIENT_ID_HERE` → Your actual Google Client ID
-     - `YOUR_GOOGLE_CLIENT_SECRET_HERE` → Your actual Google Client Secret
+     - `your-google-client-id-here` → Your actual Google Client ID
+     - `your-google-client-secret-here` → Your actual Google Client Secret
    - The `appsettings.Development.json` file is gitignored to keep secrets local
 
 2. **For Production/GitHub**:
@@ -72,106 +128,24 @@ This project uses Google OAuth for authentication. You need to set up Google OAu
    - Click "Create Credentials" > "OAuth 2.0 Client IDs"
    - Choose "Web application"
    - Add authorized redirect URIs:
-     - `http://localhost:3000/api/auth/callback` (for development)
+     - `http://localhost:55556/api/auth/callback` (for development)
      - `https://yourdomain.com/api/auth/callback` (for production)
    - Add authorized JavaScript origins:
-     - `http://localhost:3000` (for development)
+     - `http://localhost:55556` (for development)
      - `https://yourdomain.com` (for production)
 5. **Copy the credentials**:
    - Copy the Client ID and Client Secret
    - Paste them into your `backend/appsettings.Development.json` file
-
-#### Development Environment Setup
-
-#### Step 1: Initial Setup
-Before starting the application, you need to set up your development environment:
-
-**Option A: Using Setup Scripts (Recommended)**
-```bash
-# On Windows
-setup-dev.bat
-
-# On Linux/Mac/Git Bash
-./setup-dev.sh
-```
-
-**Option B: Manual Setup**
-```bash
-# Copy the template file
-cp backend/appsettings.Development.template.json backend/appsettings.Development.json
-
-# Edit the file and add your Google OAuth credentials
-# Replace YOUR_GOOGLE_CLIENT_ID_HERE and YOUR_GOOGLE_CLIENT_SECRET_HERE
-```
-
-#### Step 2: Start the Application
-
-**Windows (Command Prompt/PowerShell)**
-```cmd
-# Clone the repository
-git clone <repository-url>
-cd medicaltracker
-
-# Start full development environment (database, backend, React dev server)
-start-dev.bat
-
-# Start only the database
-start-dev.bat --db
-
-# Start only the backend (requires database running)
-start-dev.bat --backend
-
-# Start only React dev server
-start-dev.bat --frontend
-
-# You can combine arguments to start any combination of services:
-start-dev.bat --db --backend    # Start database and backend only
-start-dev.bat --backend --frontend # Start backend and React dev server only
-```
-
-**Linux/Mac (Terminal)**
-```bash
-# Clone the repository
-git clone <repository-url>
-cd medicaltracker
-
-# Start full development environment (database, backend, React dev server)
-./start-dev.sh
-
-# Start only the database
-./start-dev.sh --db
-
-# Start only the backend (requires database running)
-./start-dev.sh --backend
-
-# Start only React dev server
-./start-dev.sh --frontend
-
-# You can combine arguments to start any combination of services:
-./start-dev.sh --db --backend    # Start database and backend only
-./start-dev.sh --backend --frontend # Start backend and React dev server only
-```
-
-#### Script Modes Summary
-| Mode/Combination         | Command (Windows)                    | Command (Linux/Mac)                | What it does                                                      |
-|-------------------------|--------------------------------------|-----------------------------------|-------------------------------------------------------------------|
-| Full Development        | start-dev.bat                        | ./start-dev.sh                    | Starts database (port 5432), backend (port 3000), frontend (port 3001) |
-| Database only           | start-dev.bat --db                   | ./start-dev.sh --db               | Starts only the PostgreSQL database                               |
-| Backend only            | start-dev.bat --backend              | ./start-dev.sh --backend          | Starts only the backend (requires database running)               |
-| Frontend dev server     | start-dev.bat --frontend             | ./start-dev.sh --frontend         | Starts only React dev server (port 3001)                          |
-| Custom (combine flags)  | start-dev.bat --db --backend         | ./start-dev.sh --db --backend     | Starts database and backend only                                  |
-
-> **Note:** You can combine `--db`, `--backend`, and `--frontend` in any order to start any combination of services you need.
 
 ### Development Architecture
 
 The application uses a **proxy development setup** for optimal development experience:
 
 - **Database**: Runs on port 5432 (PostgreSQL)
-- **Backend**: Runs on port 3000 with hot reload
-- **React Dev Server**: Runs on port 3001 with hot reload
+- **Backend**: Runs on port 55556 with hot reload
+- **React Dev Server**: Runs on port 55555 with hot reload
 - **Proxy**: Backend forwards non-API requests to React dev server
-- **Single Domain**: All requests go through `localhost:3000` for proper session management
+- **Single Domain**: All requests go through `localhost:55556` for proper session management
 
 This setup provides:
 - ✅ **Hot reload** for both frontend and backend
@@ -202,181 +176,82 @@ If you prefer to start services manually:
    npm start
    ```
 
-## Access Points
+## 🌐 Access Points
 
-- **Application**: http://localhost:3000 (main entry point)
-- **Backend API**: http://localhost:3000/api
-- **React Dev Server**: http://localhost:3001 (direct access, not needed)
+- **Application**: http://localhost:55556 (main entry point)
+- **Backend API**: http://localhost:55556/api
+- **React Dev Server**: http://localhost:55555 (direct access, not needed)
 - **Database**: localhost:5432
   - Database: `bloodsugar`
   - Username: `postgres`
   - Password: `password`
 
-## Production Deployment
+## 🚀 Production Deployment
 
-### Docker Deployment
+### Container Architecture
 
-The application is containerized and ready for production deployment. The Dockerfile creates a multi-stage build that:
+The application is containerized as a single container that includes:
 
-1. **Builds the React frontend** and creates static files
-2. **Builds the .NET backend** 
-3. **Creates a final image** that serves both frontend and backend on port 3000
+1. **Frontend**: React app built and served as static files
+2. **Backend**: .NET API serving both API endpoints and static files
+3. **Single Port**: Everything runs on port 8080 (container) / 80 (internal)
 
-#### Quick Deployment
-
-```bash
-# Build the Docker image
-docker build -t bloodsugar-app .
-
-# Run the container
-docker run -d \
-  --name bloodsugar-app \
-  -p 3000:3000 \
-  -e GOOGLE_CLIENT_ID=your_google_client_id \
-  -e GOOGLE_CLIENT_SECRET=your_google_client_secret \
-  -e ConnectionStrings__DefaultConnection="your_production_database_connection_string" \
-  bloodsugar-app
-```
-
-#### Environment Variables for Production
+### Environment Variables for Production
 
 Set these environment variables in your production environment:
 
 ```bash
 # Required for Google OAuth
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+Google__ClientId=your_google_client_id
+Google__ClientSecret=your_google_client_secret
 
 # Database connection
 ConnectionStrings__DefaultConnection=your_production_database_connection_string
 
 # Application settings
 ASPNETCORE_ENVIRONMENT=Production
-ASPNETCORE_URLS=http://+:3000
+WEBSITES_PORT=8080
+
+# JWT Configuration
+JWT__Key=your_jwt_secret_key
+JWT__Issuer=https://yourdomain.com
+JWT__Audience=https://yourdomain.com
 ```
 
-#### Google OAuth Production Setup
+### Cloud Platform Deployment
 
-1. **Update Google OAuth Console**:
-   - Add your production domain to "Authorized redirect URIs":
-     - `https://yourdomain.com/api/auth/callback`
-   - Add your production domain to "Authorized JavaScript origins":
-     - `https://yourdomain.com`
-
-2. **Environment Variables**:
-   - Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your production environment
-   - The application automatically detects the current domain and uses appropriate redirect URIs
-
-#### Production Features
-
-- **Automatic HTTPS Detection**: Cookies and security settings automatically adjust for HTTPS in production
-- **Dynamic OAuth URLs**: Redirect URIs are automatically determined based on the current request
-- **Static File Serving**: Frontend is built and served as static files by the backend from `wwwroot`
-- **Client-Side Routing**: All routes fallback to `index.html` for React Router
-- **Single Port**: Everything runs on port 3000, eliminating CORS and session issues
-- **Environment-Agnostic**: Works in any environment without configuration changes
-- **Proxy Development**: Development environment uses proxy setup for hot reload and same-domain cookies
-
-#### Cloud Platform Deployment
-
-**Azure App Service**:
+**Azure Web App for Containers**:
 ```bash
-# Deploy to Azure
-az webapp up --name your-app-name --resource-group your-resource-group --runtime "DOTNETCORE:9.0"
+# Configure container settings
+az webapp config container set \
+  --name medicaltracker \
+  --resource-group medical-tracker-rg \
+  --docker-custom-image-name ghcr.io/a1143179/medical-tracker/medicaltracker:latest
 ```
 
 **AWS ECS/Fargate**:
 ```bash
-# Build and push to ECR
-docker build -t bloodsugar-app .
-docker tag bloodsugar-app:latest your-ecr-repo:latest
-docker push your-ecr-repo:latest
+# Pull and run the container
+docker pull ghcr.io/a1143179/medical-tracker/medicaltracker:latest
+docker run -p 8080:80 ghcr.io/a1143179/medical-tracker/medicaltracker:latest
 ```
 
 **Google Cloud Run**:
 ```bash
 # Deploy to Cloud Run
-gcloud run deploy bloodsugar-app --image gcr.io/your-project/bloodsugar-app --platform managed
+gcloud run deploy medicaltracker \
+  --image ghcr.io/a1143179/medical-tracker/medicaltracker:latest \
+  --platform managed \
+  --port 8080
 ```
 
-### Production Database Setup
-
-For production, use a managed PostgreSQL service:
-
-- **Azure Database for PostgreSQL**
-- **AWS RDS for PostgreSQL**
-- **Google Cloud SQL**
-- **Heroku Postgres**
-
-Update the connection string in your production environment variables.
-
-## Features
-
-- **User Authentication**: Google OAuth integration
-- **Blood Sugar Tracking**: Add, edit, and delete blood sugar records
-- **User-Specific Data**: Each user only sees their own records
-- **Analytics Dashboard**: Charts and statistics for blood sugar trends
-- **Responsive Design**: Works on desktop and mobile devices
-- **Multi-language Support**: Internationalization support
-- **Session Management**: Secure session-based authentication
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port Already in Use**: The scripts check if ports are in use and skip starting services if occupied
-2. **Docker Not Running**: Make sure Docker Desktop is started before running the scripts
-3. **Database Connection**: Ensure PostgreSQL container is running and accessible
-4. **Google OAuth "Missing required parameter: client_id"**: 
-   - Make sure you've copied `backend/appsettings.Development.template.json` to `backend/appsettings.Development.json`
-   - Replace the placeholder values with your actual Google OAuth credentials
-   - Ensure your Google OAuth redirect URIs include `http://localhost:3000/api/auth/callback`
-5. **Google OAuth "redirect_uri_mismatch"**: 
-   - Check that your Google OAuth console has the correct redirect URIs configured
-   - For development: `http://localhost:3000/api/auth/callback`
-   - For production: `https://yourdomain.com/api/auth/callback`
-6. **React Dev Server Slow to Start**: On first run, React dev server may take 30-60 seconds to start
-7. **Proxy Issues**: If you can't access the app, ensure both backend (port 3000) and React dev server (port 3001) are running
-8. **404 Errors on Routes**: In development, ensure the backend proxy is working correctly. In production, ensure static files are being served from `wwwroot`
-
-### Cross-Platform Compatibility
-
-The project provides platform-specific startup scripts:
-
-- **Windows**: Use `start-dev.bat` (Command Prompt/PowerShell)
-- **Ubuntu/Linux**: Use `./start-dev.sh` (native bash)
-- **macOS**: Use `./start-dev.sh` (native bash)
-- **Port Management**: Scripts check if ports are in use and skip starting services if occupied
-- **Development Ports**: Backend runs on port 3000, React dev server on port 3001
-
-> **Note**: Each platform uses its native script for optimal compatibility and performance.
-
-## Development
-
-### Project Structure
-```
-medicaltracker/
-├── frontend/          # React application
-│   ├── src/           # React source code
-│   ├── public/        # Static assets
-│   └── cypress/       # End-to-end tests
-├── backend/           # .NET API
-│   ├── Controllers/   # API controllers
-│   ├── Models/        # Data models
-│   ├── Data/          # Database context
-│   └── DTOs/          # Data transfer objects
-├── xunit/             # Unit tests for backend
-├── start-dev.bat      # Windows startup script
-├── start-dev.sh       # Linux/Mac startup script
-├── Dockerfile         # Production container
-└── README.md          # This file
-```
+## 🧪 Testing
 
 ### Unit Testing
 
 The project includes comprehensive unit tests for the backend controllers using **xUnit** and **Moq** with **100% test coverage** for all controller endpoints.
 
-#### 🚀 Quick Start
+#### Quick Start
 
 ```bash
 # Run all tests
@@ -387,12 +262,9 @@ dotnet test xunit/Backend.Tests.csproj --verbosity normal
 
 # Run specific test class
 dotnet test xunit/Backend.Tests.csproj --filter "RecordsControllerTests"
-
-# Run tests with coverage (if available)
-dotnet test xunit/Backend.Tests.csproj --collect:"XPlat Code Coverage"
 ```
 
-#### 📊 Test Coverage
+#### Test Coverage
 
 The test suite provides comprehensive coverage for all backend functionality:
 
@@ -413,84 +285,6 @@ The test suite provides comprehensive coverage for all backend functionality:
 - ✅ **GET /health** - Basic health check endpoint
 - ✅ **Database Connectivity** - Database connection verification
 
-#### 🛠️ Test Features
-
-- **🔧 In-Memory Database**: Uses EF Core InMemory provider for fast, isolated tests
-- **🎭 Mock Dependencies**: Uses Moq for mocking external dependencies (ILogger, etc.)
-- **🔐 Session Testing**: Custom TestSession implementation for testing session-based authentication
-- **✅ Validation Testing**: Comprehensive validation testing for all endpoints with proper error responses
-- **🚨 Error Handling**: Tests for various error scenarios and edge cases
-- **⚡ Fast Execution**: All tests run in under 2 seconds
-- **🔄 Isolated Tests**: Each test runs independently with clean state
-
-#### 🏗️ Test Architecture
-
-```csharp
-// Example test structure with best practices
-public class RecordsControllerTests
-{
-    private readonly Mock<ILogger<RecordsController>> _mockLogger;
-    private readonly DbContextOptions<AppDbContext> _options;
-
-    public RecordsControllerTests()
-    {
-        // Set up in-memory database for each test
-        _options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        _mockLogger = new Mock<ILogger<RecordsController>>();
-    }
-
-    [Fact]
-    public async Task Get_ReturnsAllRecords_ForAuthenticatedUser()
-    {
-        // Arrange - Set up test data and mocks
-        using var context = new AppDbContext(_options);
-        var controller = new RecordsController(context, _mockLogger.Object);
-        
-        // Act - Call the controller method
-        var result = await controller.Get();
-        
-        // Assert - Verify the expected behavior
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        var records = Assert.IsType<List<BloodSugarRecord>>(okResult.Value);
-        Assert.Empty(records); // Should be empty for new user
-    }
-}
-```
-
-#### 🔧 Test Utilities
-
-The project includes a custom `TestSession` class for reliable session testing:
-
-```csharp
-public class TestSession : ISession
-{
-    private readonly ConcurrentDictionary<string, byte[]> _store = new();
-    
-    // Implements all ISession methods for in-memory testing
-    // Includes SetString/GetString extension methods
-}
-```
-
-#### 📈 Test Results
-
-All tests pass with the following metrics:
-- **Total Tests**: 11
-- **Pass Rate**: 100%
-- **Execution Time**: < 2 seconds
-- **Coverage**: All controller endpoints tested
-- **Dependencies**: Fully mocked and isolated
-
-#### 🎯 Best Practices Implemented
-
-- **AAA Pattern**: Arrange, Act, Assert structure
-- **Test Isolation**: Each test uses unique database instance
-- **Meaningful Names**: Descriptive test method names
-- **Edge Case Coverage**: Invalid data, missing records, unauthorized access
-- **Fast Feedback**: Quick execution for rapid development cycles
-
 ### End-to-End Testing
 
 The project includes comprehensive Cypress tests for the frontend:
@@ -504,36 +298,84 @@ npm run cypress:run
 npm run cypress:open
 ```
 
-### Database Migrations
+## 🔄 CI/CD Pipeline
 
-The backend automatically runs migrations on startup. If you need to run migrations manually:
+### GitHub Actions Workflows
 
-```bash
-cd backend
-dotnet ef database update
+The project includes automated CI/CD pipelines:
+
+1. **Frontend Changes** → Build frontend → Copy to backend wwwroot → Build container → Push to GHCR → Deploy to Azure
+2. **Backend Changes** → Run tests → Build container → Push to GHCR → Deploy to Azure
+3. **Full Stack Changes** → Build both → Run tests → Build container → Push to GHCR → Deploy to Azure
+
+### Automated Testing
+
+- **Unit Tests**: Run on every push and pull request
+- **Frontend Tests**: Run on frontend changes
+- **Container Build**: Automated container builds and pushes to GHCR
+
+## 🏗️ Project Structure
+
+```
+medicaltracker/
+├── frontend/          # React application
+│   ├── src/           # React source code
+│   ├── public/        # Static assets
+│   └── cypress/       # End-to-end tests
+├── backend/           # .NET API
+│   ├── Controllers/   # API controllers
+│   ├── Models/        # Data models
+│   ├── Data/          # Database context
+│   └── DTOs/          # Data transfer objects
+├── xunit/             # Unit tests for backend
+├── .github/           # GitHub Actions workflows
+├── start-dev.ps1      # Windows startup script
+├── start-dev.sh       # Linux/Mac startup script
+├── pull-ghcr-containers.sh  # Container pull script
+├── Dockerfile         # Production container
+└── README.md          # This file
 ```
 
-### Adding New Features
+## 🔧 Features
 
-1. **Backend Changes**: Modify API endpoints in `backend/Controllers/`
-2. **Frontend Changes**: Update React components in `frontend/src/`
-3. **Database Changes**: Create new migrations with `dotnet ef migrations add <name>`
+- **User Authentication**: Google OAuth integration
+- **Blood Sugar Tracking**: Add, edit, and delete blood sugar records
+- **User-Specific Data**: Each user only sees their own records
+- **Analytics Dashboard**: Charts and statistics for blood sugar trends
+- **Responsive Design**: Works on desktop and mobile devices
+- **Multi-language Support**: Internationalization support
+- **Session Management**: Secure session-based authentication
+- **Container Deployment**: Single container deployment from GHCR
+- **Automated CI/CD**: GitHub Actions for automated deployment
 
-## Architecture Overview
+## 🛠️ Troubleshooting
 
-### Development vs Production
+### Common Issues
 
-**Development Mode:**
-- Backend runs on port 3000
-- React dev server runs on port 3001
-- Backend proxies non-API requests to React dev server
-- Hot reload enabled for both frontend and backend
+1. **Port Already in Use**: The scripts check if ports are in use and skip starting services if occupied
+2. **Docker Not Running**: Make sure Docker Desktop is started before running the scripts
+3. **Database Connection**: Ensure PostgreSQL container is running and accessible
+4. **Google OAuth "Missing required parameter: client_id"**: 
+   - Make sure you've copied `backend/appsettings.Development.template.json` to `backend/appsettings.Development.json`
+   - Replace the placeholder values with your actual Google OAuth credentials
+   - Ensure your Google OAuth redirect URIs include `http://localhost:55556/api/auth/callback`
+5. **Container Pull Failed**: 
+   - Verify GitHub token has `read:packages` scope
+   - Check container exists in GHCR
+6. **Azure Web App Stopped**: 
+   - Check container configuration in Azure Portal
+   - Verify environment variables are set correctly
+   - Check logs in Azure Portal
 
-**Production Mode:**
-- Single application on port 3000
-- React app built and served as static files from `wwwroot`
-- Backend serves both API and static files
-- Client-side routing handled by fallback to `index.html`
+### Cross-Platform Compatibility
+
+The project provides platform-specific startup scripts:
+
+- **Windows**: Use `start-dev.ps1` (PowerShell)
+- **Ubuntu/Linux**: Use `./start-dev.sh` (native bash)
+- **macOS**: Use `./start-dev.sh` (native bash)
+
+## 📈 Performance & Security
 
 ### Security Features
 
@@ -549,3 +391,16 @@ dotnet ef database update
 - **Database Optimization**: Proper indexing and query optimization
 - **Caching**: Session and static file caching
 - **Compression**: Automatic response compression
+- **Single Container**: Reduced deployment complexity and resource usage
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests to ensure everything works
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
