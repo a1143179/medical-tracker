@@ -12,10 +12,10 @@ echo.
 echo Step 2: Creating service principal...
 echo.
 echo Running command:
-echo az ad sp create-for-rbac --name "medical-tracker-github-actions" --role contributor --scopes /subscriptions/%SUBSCRIPTION_ID%/resourceGroups/medical-tracker-rg --sdk-auth
+echo az ad sp create-for-rbac --name "medical-tracker-github-actions" --role contributor --scopes /subscriptions/%SUBSCRIPTION_ID%/resourceGroups/ResourceGroup1 --sdk-auth
 echo.
 
-az ad sp create-for-rbac --name "medical-tracker-github-actions" --role contributor --scopes /subscriptions/%SUBSCRIPTION_ID%/resourceGroups/medical-tracker-rg --sdk-auth
+az ad sp create-for-rbac --name "medical-tracker-github-actions" --role contributor --scopes /subscriptions/%SUBSCRIPTION_ID%/resourceGroups/ResourceGroup1 --sdk-auth
 
 echo.
 echo ========================================
