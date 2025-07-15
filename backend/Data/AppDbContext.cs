@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users { get; set; }
-    public DbSet<BloodSugarRecord> BloodSugarRecords { get; set; }
+    public DbSet<Record> Records { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,7 +23,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Name).IsRequired();
         });
 
-        modelBuilder.Entity<BloodSugarRecord>(entity =>
+        modelBuilder.Entity<Record>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Level).IsRequired();

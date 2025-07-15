@@ -11,10 +11,55 @@ backend/wwwroot/
 
 # Ignore development settings with secrets
 backend/appsettings.Development.json
+appsettings.Development.json
 
 # Ignore test project build artifacts
-backend/Tests/obj/
-backend/Tests/bin/
+xunit/obj/
+xunit/bin/
 
+# Ignore temporary development files
+!PORT_*
+Not Available
+Available
+Not
+
+# Ignore build artifacts
 build/ 
+
+# Ignore environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ignore log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore coverage reports
+coverage/
+*.lcov
+
+# Ignore temporary files
+*.tmp
+*.temp
 

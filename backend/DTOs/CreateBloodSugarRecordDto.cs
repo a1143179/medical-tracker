@@ -1,6 +1,6 @@
 namespace Backend.DTOs;
 
-public class CreateBloodSugarRecordDto
+public class CreateRecordDto
 {
     public double Level { get; set; }
     public DateTime MeasurementTime { get; set; }

@@ -1,6 +1,6 @@
 namespace Backend.Models;
 
-public class BloodSugarRecord
+public class Record
 {
     public int Id { get; set; }
     public double Level { get; set; }

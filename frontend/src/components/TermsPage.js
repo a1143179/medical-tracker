@@ -38,7 +38,7 @@ const TermsPage = () => (
       </Typography>
       <Typography variant="h6" sx={{ mt: 2 }}>8. Contact Us</Typography>
       <Typography variant="body1" paragraph>
-        If you have any questions about these Terms and Conditions, please contact us at support@bloodsugartracker.com.
+        If you have any questions about these Terms and Conditions, please contact us at support@medicaltracker.com.
       </Typography>
     </Box>
   </Container>

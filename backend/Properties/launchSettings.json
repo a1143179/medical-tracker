@@ -1,14 +1,13 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
+{
   "profiles": {
-    "backend": {
+    "medicaltracker-backend": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "launchBrowser": false,
-      "applicationUrl": "http://localhost:55556",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:55555",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }
-}
+} 

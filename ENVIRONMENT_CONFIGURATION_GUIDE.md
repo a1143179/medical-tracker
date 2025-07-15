@@ -15,8 +15,8 @@ This guide explains how the application handles different environments (developm
   },
   "CORS": {
     "AllowedOrigins": [
-      "https://localhost:55555",
-      "http://localhost:55555",
+      "https://localhost:55556",
+      "http://localhost:55556",
       "http://localhost:3000",
       "https://medicaltracker.azurewebsites.net"
     ]

@@ -1,53 +1,34 @@
 using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Authentication;
 using Serilog;
-using Serilog.Events;
 using Backend.Services;
+using Microsoft.AspNetCore.DataProtection;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog for file logging
+// Logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Debug)
-    .MinimumLevel.Override("Backend", LogEventLevel.Debug)
+    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", Serilog.Events.LogEventLevel.Debug)
+    .MinimumLevel.Override("Backend", Serilog.Events.LogEventLevel.Debug)
     .WriteTo.Console()
-    .WriteTo.File("logs/app.log", 
-        rollingInterval: RollingInterval.Day,
-        fileSizeLimitBytes: 10 * 1024 * 1024, // 10MB
-        retainedFileCountLimit: 5,
-        rollOnFileSizeLimit: true)
+    .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 10 * 1024 * 1024, retainedFileCountLimit: 5, rollOnFileSizeLimit: true)
     .CreateLogger();
-
 builder.Host.UseSerilog();
 
-// Add services to the container.
+// Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// Add health checks
 builder.Services.AddHealthChecks();
-
-// Add JWT service
 builder.Services.AddScoped<IJwtService, JwtService>();
-
-// Configure basic authentication for now (JWT will be added later)
 builder.Services.AddAuthentication();
 
-// Add Google OAuth authentication
+// Google OAuth
 var googleClientId = builder.Configuration["Google:ClientId"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
 var googleClientSecret = builder.Configuration["Google:ClientSecret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
-
-// Log OAuth configuration status - will log after app is built to avoid BuildServiceProvider warning
-var hasClientId = !string.IsNullOrEmpty(googleClientId);
-var hasClientSecret = !string.IsNullOrEmpty(googleClientSecret);
-
 if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
 {
     builder.Services.AddAuthentication(options =>
@@ -58,184 +39,139 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
     })
     .AddCookie("Cookies", options =>
     {
-        options.Events.OnRedirectToLogin = context =>
-        {
-            context.Response.StatusCode = 401;
-            return Task.CompletedTask;
-        };
-        
-        // Configure cookie options for better OAuth state handling
-        options.Cookie.Name = "BloodSugarAuth";
+        options.Events.OnRedirectToLogin = context => { context.Response.StatusCode = 401; return Task.CompletedTask; };
+        options.Cookie.Name = "MedicalTracker.OAuth.State";
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
         options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-        options.Cookie.SameSite = SameSiteMode.Lax; // Allow OAuth redirects
-        options.Cookie.MaxAge = TimeSpan.FromHours(1); // Shorter timeout for OAuth
-        
-        // Handle authentication failures
-        options.Events.OnRedirectToAccessDenied = context =>
-        {
-            context.Response.StatusCode = 403;
-            return Task.CompletedTask;
-        };
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.MaxAge = TimeSpan.FromHours(1);
+        options.Events.OnRedirectToAccessDenied = context => { context.Response.StatusCode = 403; return Task.CompletedTask; };
     })
     .AddGoogle(options =>
     {
         options.ClientId = googleClientId;
         options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/api/auth/callback";
-        options.SaveTokens = true; // Save tokens for debugging
-        
-        // Configure OAuth state handling - use default state format with better session support
+        options.SaveTokens = true;
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-        
-        // Configure dynamic redirect URI for production
         if (!builder.Environment.IsDevelopment())
         {
             options.Events.OnRedirectToAuthorizationEndpoint = context =>
             {
                 var request = context.HttpContext.Request;
-                var scheme = request.Scheme; // Will be "https" in production
+                var scheme = request.Scheme;
                 var host = request.Host.Value ?? "localhost";
-                var redirectUri = $"{scheme}://{host}/api/auth/callback";
-                
-                // Update the redirect URI to use HTTPS in production
-                context.RedirectUri = redirectUri;
+                context.RedirectUri = $"{scheme}://{host}/api/auth/callback";
                 return Task.CompletedTask;
             };
         }
-        
-        // Add callback event handler to better handle OAuth state
         options.Events.OnRemoteFailure = context =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogError("OAuth remote failure: {Error}", context.Failure?.Message);
-            
-            // Check if this is a state error and user might already be authenticated
-            if (context.Failure?.Message?.Contains("oauth state was missing or invalid") == true)
+            if (context.Failure?.Message?.Contains("oauth state was missing or invalid") == true && context.HttpContext.User?.Identity?.IsAuthenticated == true)
             {
-                // Check if user is already authenticated
-                if (context.HttpContext.User?.Identity?.IsAuthenticated == true)
-                {
-                    logger.LogInformation("OAuth state error but user is authenticated, redirecting to dashboard");
-                    context.Response.Redirect("/dashboard");
-                    context.HandleResponse();
-                    return Task.CompletedTask;
-                }
+                logger.LogInformation("OAuth state error but user is authenticated, redirecting to dashboard");
+                context.Response.Redirect("/dashboard");
+                context.HandleResponse();
+                return Task.CompletedTask;
             }
-            
-            // Clear any invalid session data
             context.HttpContext.Session.Clear();
-            
-            // Redirect to login page with error
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
             return Task.CompletedTask;
         };
-        
-        // Add ticket validation
         options.Events.OnTicketReceived = async context =>
         {
             var userService = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var claims = context.Principal.Claims;
+            var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
+            var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            
+            var claims = context.Principal != null ? context.Principal.Claims : Enumerable.Empty<Claim>();
             var email = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
             var name = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
             var googleId = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-
+            
             if (!string.IsNullOrEmpty(email))
             {
                 var user = await userService.Users.FirstOrDefaultAsync(u => u.Email == email);
-                
                 if (user == null)
                 {
-                    user = new Backend.Models.User
-                    {
-                        Email = email,
-                        Name = name ?? email,
-                        GoogleId = googleId
-                    };
+                    user = new Backend.Models.User { Email = email, Name = name ?? email, GoogleId = googleId };
                     userService.Users.Add(user);
                     await userService.SaveChangesAsync();
+                    logger.LogInformation("Created new user: {Email}", email);
                 }
                 else if (!string.IsNullOrEmpty(googleId) && user.GoogleId != googleId)
                 {
                     user.GoogleId = googleId;
-                    if (!string.IsNullOrEmpty(name))
-                    {
-                        user.Name = name;
-                    }
+                    if (!string.IsNullOrEmpty(name)) user.Name = name;
                     await userService.SaveChangesAsync();
+                    logger.LogInformation("Updated existing user: {Email}", email);
                 }
-
-                // Set session
+                
                 context.HttpContext.Session.SetString("UserId", user.Id.ToString());
+                
+                // Get remember me setting from OAuth properties
+                var rememberMe = context.Properties?.Items.ContainsKey("rememberMe") == true 
+                    && bool.TryParse(context.Properties.Items["rememberMe"], out var rm) && rm;
+                
+                // Generate JWT token
+                var token = jwtService.GenerateToken(user, rememberMe);
+                
+                // Set JWT token as HTTP-only cookie
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = !environment.IsDevelopment(),
+                    SameSite = SameSiteMode.Lax,
+                    MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
+                };
+                
+                context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
+                logger.LogInformation("OAuth callback successful for user: {Email}", email);
             }
         };
     });
 }
 else
 {
-    // Fallback authentication without Google OAuth
-    builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = "Cookies";
-    })
-    .AddCookie("Cookies");
+    builder.Services.AddAuthentication(options => { options.DefaultScheme = "Cookies"; }).AddCookie("Cookies");
 }
 
-// Add Entity Framework - use PostgreSQL if connection string is available, otherwise in-memory
+// Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (!string.IsNullOrEmpty(connectionString))
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseNpgsql(connectionString));
-}
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 else
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseInMemoryDatabase("BloodSugarHistoryDb"));
-}
+    builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("BloodSugarHistoryDb"));
 
-// Configure Data Protection for production
+// Data Protection
 if (!builder.Environment.IsDevelopment())
 {
-    // In production, configure data protection to prevent key ring errors
-    // This prevents the "key not found in key ring" error
     var keyRingPath = Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") != null 
-        ? $"/tmp/keys-{Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID")}"
+        ? $"/tmp/keys-{Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID")}" 
         : "/tmp/keys";
-    
     try
     {
-        // Create directory if it doesn't exist
         var keyRingDir = new DirectoryInfo(keyRingPath);
-        if (!keyRingDir.Exists)
-        {
-            keyRingDir.Create();
-        }
-        
-        builder.Services.AddDataProtection()
-            .PersistKeysToFileSystem(keyRingDir)
-            .SetApplicationName("BloodSugarHistory")
-            .SetDefaultKeyLifetime(TimeSpan.FromDays(90)); // Longer key lifetime for production
+        if (!keyRingDir.Exists) keyRingDir.Create();
+        builder.Services.AddDataProtection().PersistKeysToFileSystem(keyRingDir).SetDefaultKeyLifetime(TimeSpan.FromDays(90));
     }
-    catch (Exception ex)
+    catch
     {
-        // Log the error but continue with in-memory fallback
-        Console.WriteLine($"Failed to configure file-based data protection: {ex.Message}");
-        builder.Services.AddDataProtection()
-            .SetApplicationName("BloodSugarHistory");
+        builder.Services.AddDataProtection();
     }
 }
 else
 {
-    // In development, use a consistent key ring
-    builder.Services.AddDataProtection()
-        .SetApplicationName("BloodSugarHistory");
+    builder.Services.AddDataProtection();
 }
 
-// Add session support
+// Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -243,155 +179,105 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-    options.Cookie.MaxAge = TimeSpan.FromDays(30); // Set explicit max age
-    options.Cookie.Name = "BloodSugarSession"; // Use custom cookie name
-    options.Cookie.SameSite = SameSiteMode.Lax; // Allow OAuth redirects
+    options.Cookie.MaxAge = TimeSpan.FromDays(30);
+    options.Cookie.Name = "MedicalTracker.Session.Data";
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 var app = builder.Build();
 
-// Log OAuth configuration status after app is built
+// Logging
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Google OAuth configuration - ClientId: {HasClientId}, ClientSecret: {HasClientSecret}, Environment: {Environment}", 
-    hasClientId, hasClientSecret, app.Environment.EnvironmentName);
+logger.LogInformation("Google OAuth configuration - Environment: {Environment}", app.Environment.EnvironmentName);
 
-// Ensure database is created and migrations are applied
+// DB Migrations
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     context.Database.EnsureCreated();
 }
 
-// Configure the HTTP request pipeline.
+// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-// Only use HTTPS redirect if not in container environment
 if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
-{
-app.UseHttpsRedirection();
-}
-
-// Serve static files from wwwroot in production
+    app.UseHttpsRedirection();
 if (!app.Environment.IsDevelopment())
 {
     app.UseStaticFiles();
-    
-    // Fallback to index.html for client-side routing
     app.MapFallbackToFile("index.html");
 }
 
-// Add session error handling middleware
 app.Use(async (context, next) =>
 {
-    try
-    {
-        await next();
-    }
+    try { await next(); }
     catch (System.Security.Cryptography.CryptographicException ex) when (ex.Message.Contains("key") && ex.Message.Contains("not found"))
     {
-        // Clear invalid session cookies
-        context.Response.Cookies.Delete("BloodSugarSession");
+        context.Response.Cookies.Delete("MedicalTracker.Session.Data");
         context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
-        
-        // Redirect to login page
         context.Response.Redirect("/login");
         return;
     }
 });
-
-// Add cookie cleanup middleware for old session cookies
 app.Use(async (context, next) =>
 {
-    // Clean up old session cookies that might cause issues
     var oldSessionCookie = context.Request.Cookies[".AspNetCore.Session"];
     if (!string.IsNullOrEmpty(oldSessionCookie))
-    {
         context.Response.Cookies.Delete(".AspNetCore.Session");
-    }
-    
     await next();
 });
-
-// Ensure session is available before authentication
 app.UseSession();
-
-// Add OAuth state validation middleware
 app.Use(async (context, next) =>
 {
-    // Ensure session is established before OAuth flow
     if (context.Request.Path.StartsWithSegments("/api/auth"))
     {
         await context.Session.LoadAsync();
-        
-        // Log OAuth flow for debugging
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("OAuth request: {Path}, Method: {Method}, HasSession: {HasSession}, QueryString: {QueryString}", 
-            context.Request.Path, context.Request.Method, context.Session.IsAvailable, context.Request.QueryString);
-        
-        // Prevent duplicate callback requests
-        if (context.Request.Path.StartsWithSegments("/api/auth/callback") && 
-            string.IsNullOrEmpty(context.Request.Query["state"].ToString()) &&
-            string.IsNullOrEmpty(context.Request.Query["code"].ToString()))
+        logger.LogInformation("OAuth request: {Path}, Method: {Method}, HasSession: {HasSession}, QueryString: {QueryString}", context.Request.Path, context.Request.Method, context.Session.IsAvailable, context.Request.QueryString);
+        if (context.Request.Path.StartsWithSegments("/api/auth/callback"))
         {
-            logger.LogWarning("Duplicate callback request detected without OAuth parameters");
+            var state = context.Request.Query["state"].ToString();
+            var code = context.Request.Query["code"].ToString();
+            logger.LogInformation("Callback middleware - State: '{State}', Code: '{Code}', StateEmpty: {StateEmpty}, CodeEmpty: {CodeEmpty}", 
+                state, code, string.IsNullOrEmpty(state), string.IsNullOrEmpty(code));
             
-            // If user is already authenticated, redirect to dashboard
-            if (context.User?.Identity?.IsAuthenticated == true)
+            if (string.IsNullOrEmpty(state) && string.IsNullOrEmpty(code))
             {
-                context.Response.Redirect("/dashboard");
+                logger.LogWarning("Duplicate callback request detected without OAuth parameters");
+                if (context.User?.Identity?.IsAuthenticated == true)
+                {
+                    context.Response.Redirect("/dashboard");
+                    return;
+                }
+                context.Response.Redirect("/login?error=duplicate_callback");
                 return;
             }
-            
-            // Otherwise redirect to login
-            context.Response.Redirect("/login?error=duplicate_callback");
-            return;
         }
     }
-    
     await next();
 });
-
-// Add OAuth correlation cookie cleanup middleware
 app.Use(async (context, next) =>
 {
-    // Clean up old OAuth correlation cookies that might cause state issues
     var correlationCookie = context.Request.Cookies[".AspNetCore.Correlation.Google"];
     if (!string.IsNullOrEmpty(correlationCookie))
-    {
-        // Only delete if it's very old (more than 10 minutes)
-        // This prevents deleting active OAuth flows
         context.Response.Cookies.Delete(".AspNetCore.Correlation.Google");
-    }
-    
     await next();
 });
-
-// Add OAuth error handling middleware
 app.Use(async (context, next) =>
 {
-    try
-    {
-        await next();
-    }
-    catch (AuthenticationFailureException ex) when (ex.Message.Contains("oauth state was missing or invalid"))
+    try { await next(); }
+    catch (Exception ex) when (ex.Message.Contains("oauth state was missing or invalid"))
     {
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "OAuth state error detected - clearing cookies and redirecting");
-        
-        // Clear all authentication and session cookies
-        context.Response.Cookies.Delete("BloodSugarAuth");
-        context.Response.Cookies.Delete("BloodSugarSession");
+        context.Response.Cookies.Delete("MedicalTracker.OAuth.State");
+        context.Response.Cookies.Delete("MedicalTracker.Session.Data");
         context.Response.Cookies.Delete(".AspNetCore.Correlation.Google");
         context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
-        
-        // Clear session
         context.Session.Clear();
-        
-        // Redirect to login with error
         context.Response.Redirect("/login?error=oauth_state_invalid");
         return;
     }
@@ -399,30 +285,42 @@ app.Use(async (context, next) =>
     {
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "Data protection key error - clearing cookies");
-        
-        // Clear invalid session cookies
-        context.Response.Cookies.Delete("BloodSugarSession");
-        context.Response.Cookies.Delete("BloodSugarAuth");
+        context.Response.Cookies.Delete("MedicalTracker.Session.Data");
+        context.Response.Cookies.Delete("MedicalTracker.OAuth.State");
         context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
-        
-        // Redirect to login page
         context.Response.Redirect("/login?error=session_expired");
         return;
     }
 });
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-// Add health check endpoint
-app.MapHealthChecks("/health");
-
 app.MapControllers();
-
-// API-only mode - no frontend proxy in development
+app.MapHealthChecks("/health");
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => "Backend API is running on port 55556. Frontend should be started separately on port 55555.");
+    app.Use(async (context, next) =>
+    {
+        if (
+            context.Request.Method == "GET" &&
+            !context.Request.Path.StartsWithSegments("/api") &&
+            !context.Request.Path.StartsWithSegments("/swagger")
+        )
+        {
+            var client = new HttpClient();
+            var frontendUrl = $"http://localhost:55556{context.Request.Path}{context.Request.QueryString}";
+            var frontendResponse = await client.GetAsync(frontendUrl);
+            if (frontendResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
+                frontendResponse = await client.GetAsync("http://localhost:55556/index.html");
+            context.Response.StatusCode = (int)frontendResponse.StatusCode;
+            foreach (var header in frontendResponse.Headers)
+                context.Response.Headers[header.Key] = header.Value.ToArray();
+            foreach (var header in frontendResponse.Content.Headers)
+                context.Response.Headers[header.Key] = header.Value.ToArray();
+            context.Response.Headers.Remove("transfer-encoding");
+            await frontendResponse.Content.CopyToAsync(context.Response.Body);
+            return;
+        }
+        await next();
+    });
 }
-
 app.Run();

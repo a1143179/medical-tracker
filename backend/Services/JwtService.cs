@@ -27,13 +27,12 @@ public class JwtService : IJwtService
     public string GenerateToken(User user, bool rememberMe = false)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
-        var jwtIssuer = _configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
-        var jwtAudience = _configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+        var jwtIssuer = "https://medicaltracker.azurewebsites.net";
+        var jwtAudience = "https://medicaltracker.azurewebsites.net";
 
-        if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+        if (string.IsNullOrEmpty(jwtKey))
         {
-            _logger.LogError("JWT configuration is missing. Key: {HasKey}, Issuer: {HasIssuer}, Audience: {HasAudience}", 
-                !string.IsNullOrEmpty(jwtKey), !string.IsNullOrEmpty(jwtIssuer), !string.IsNullOrEmpty(jwtAudience));
+            _logger.LogError("JWT configuration is missing. Key: {HasKey}", !string.IsNullOrEmpty(jwtKey));
             throw new InvalidOperationException("JWT configuration is incomplete");
         }
 
@@ -73,10 +72,10 @@ public class JwtService : IJwtService
         try
         {
             var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
-            var jwtIssuer = _configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER");
-            var jwtAudience = _configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+            var jwtIssuer = "https://medicaltracker.azurewebsites.net";
+            var jwtAudience = "https://medicaltracker.azurewebsites.net";
 
-            if (string.IsNullOrEmpty(jwtKey) || string.IsNullOrEmpty(jwtIssuer) || string.IsNullOrEmpty(jwtAudience))
+            if (string.IsNullOrEmpty(jwtKey))
             {
                 _logger.LogWarning("JWT configuration is missing for token validation");
                 return null;

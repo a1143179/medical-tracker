@@ -19,7 +19,7 @@ services:
       - "5000:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=db;Database=MedicalTracker;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true
+      - ConnectionStrings__DefaultConnection=Server=db;Database=MedicalTracker;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=true
     depends_on:
       - db
     networks:
@@ -30,7 +30,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
+      - SA_PASSWORD=${DB_PASSWORD}
     ports:
       - "1433:1433"
     volumes:

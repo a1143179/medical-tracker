@@ -50,7 +50,7 @@ Add these redirect URIs:
 
 **For Production (when you deploy):**
 - `https://yourdomain.com/api/auth/callback`
-- `https://bloodsugarhistory.azurewebsites.net/api/auth/callback`
+- `https://medicaltracker.azurewebsites.net/api/auth/callback`
 
 ## Step 7: Configure Authorized JavaScript Origins
 
@@ -61,7 +61,7 @@ Add these JavaScript origins:
 
 **For Production (when you deploy):**
 - `https://yourdomain.com`
-- `https://bloodsugarhistory.azurewebsites.net`
+- `https://medicaltracker.azurewebsites.net`
 
 ## Step 8: Get Your Credentials
 

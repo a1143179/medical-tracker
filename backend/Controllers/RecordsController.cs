@@ -4,7 +4,7 @@ using Backend.Data;
 using Backend.Models;
 using Backend.DTOs;
 
-namespace Backend;
+namespace Backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -26,7 +26,7 @@ public class RecordsController : ControllerBase
             return Unauthorized();
         }
 
-        var records = await _context.BloodSugarRecords
+        var records = await _context.Records
             .Where(r => r.UserId == id)
             .OrderByDescending(r => r.MeasurementTime)
             .ToListAsync();
@@ -35,7 +35,7 @@ public class RecordsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Post([FromBody] CreateBloodSugarRecordDto dto)
+    public async Task<IActionResult> Post([FromBody] CreateRecordDto dto)
     {
         var userId = HttpContext.Session.GetString("UserId");
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
@@ -48,7 +48,7 @@ public class RecordsController : ControllerBase
             return BadRequest("Blood sugar level must be greater than 0");
         }
 
-        var record = new BloodSugarRecord
+        var record = new Record
         {
             Level = dto.Level,
             MeasurementTime = dto.MeasurementTime,
@@ -56,14 +56,14 @@ public class RecordsController : ControllerBase
             UserId = id
         };
 
-        _context.BloodSugarRecords.Add(record);
+        _context.Records.Add(record);
         await _context.SaveChangesAsync();
 
         return CreatedAtAction(nameof(Get), new { id = record.Id }, record);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Put(int id, [FromBody] CreateBloodSugarRecordDto dto)
+    public async Task<IActionResult> Put(int id, [FromBody] CreateRecordDto dto)
     {
         var userId = HttpContext.Session.GetString("UserId");
         if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var userIdInt))
@@ -76,7 +76,7 @@ public class RecordsController : ControllerBase
             return BadRequest("Blood sugar level must be greater than 0");
         }
 
-        var record = await _context.BloodSugarRecords
+        var record = await _context.Records
             .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userIdInt);
 
         if (record == null)
@@ -102,7 +102,7 @@ public class RecordsController : ControllerBase
             return Unauthorized();
         }
 
-        var record = await _context.BloodSugarRecords
+        var record = await _context.Records
             .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userIdInt);
 
         if (record == null)
@@ -110,7 +110,7 @@ public class RecordsController : ControllerBase
             return NotFound();
         }
 
-        _context.BloodSugarRecords.Remove(record);
+        _context.Records.Remove(record);
         await _context.SaveChangesAsync();
 
         return Ok();

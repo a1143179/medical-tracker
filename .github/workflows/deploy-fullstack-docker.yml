@@ -1,0 +1,50 @@
+name: Deploy Fullstack Docker to Azure Web App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_WEBAPP_NAME: medicaltracker
+      RESOURCE_GROUP: medical-tracker-rg
+      GHCR_IMAGE: ghcr.io/${{ github.repository }}/medicaltracker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t $GHCR_IMAGE:${{ github.sha }} -t $GHCR_IMAGE:latest .
+
+      - name: Push Docker image to GHCR
+        run: |
+          docker push $GHCR_IMAGE:${{ github.sha }}
+          docker push $GHCR_IMAGE:latest
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App for Containers
+        run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --docker-custom-image-name $GHCR_IMAGE:latest
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health || exit 1 

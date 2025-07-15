@@ -5,14 +5,14 @@ This document explains how to set up environment variables for different deploym
 ## Environment Configuration
 
 ### Development
-- **Mailjet Account**: Development account (sandbox mode)
-- **Environment Variables**: `MAILJET_API_KEY`, `MAILJET_API_SECRET`
-- **Sandbox Mode**: Enabled (emails don't reach real users)
+- **Environment**: Development mode
+- **Database**: Local PostgreSQL or SQLite
+- **Authentication**: Google OAuth (development credentials)
 
 ### Production
-- **Mailjet Account**: Production account (real delivery)
-- **Environment Variables**: `MAILJET_PRODUCTION_API_KEY`, `MAILJET_PRODUCTION_API_SECRET`
-- **Sandbox Mode**: Disabled (emails sent to real users)
+- **Environment**: Production mode
+- **Database**: Production PostgreSQL
+- **Authentication**: Google OAuth (production credentials)
 
 ## Local Development Setup
 
@@ -20,20 +20,23 @@ This document explains how to set up environment variables for different deploym
 
 #### Windows (PowerShell)
 ```powershell
-$env:MAILJET_API_KEY="your_api_key"
-$env:MAILJET_API_SECRET="your_api_secret"
+$env:ASPNETCORE_ENVIRONMENT="Development"
+$env:GOOGLE_CLIENT_ID="your_google_client_id"
+$env:GOOGLE_CLIENT_SECRET="your_google_client_secret"
 ```
 
 #### Windows (Command Prompt)
 ```cmd
-set MAILJET_API_KEY=your_api_key
-set MAILJET_API_SECRET=your_api_secret
+set ASPNETCORE_ENVIRONMENT=Development
+set GOOGLE_CLIENT_ID=your_google_client_id
+set GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 #### macOS/Linux
 ```bash
-export MAILJET_API_KEY="your_api_key"
-export MAILJET_API_SECRET="your_api_secret"
+export ASPNETCORE_ENVIRONMENT="Development"
+export GOOGLE_CLIENT_ID="your_google_client_id"
+export GOOGLE_CLIENT_SECRET="your_google_client_secret"
 ```
 
 ### 2. Run the Application
@@ -57,11 +60,14 @@ npm start
 4. **Add the following secrets:**
 
 #### For Production
-- **Name**: `MAILJET_PRODUCTION_API_KEY`
-- **Value**: Your production Mailjet API key
+- **Name**: `GOOGLE_CLIENT_ID`
+- **Value**: Your production Google OAuth client ID
 
-- **Name**: `MAILJET_PRODUCTION_API_SECRET`
-- **Value**: Your production Mailjet API secret
+- **Name**: `GOOGLE_CLIENT_SECRET`
+- **Value**: Your production Google OAuth client secret
+
+- **Name**: `AZURE_CREDENTIALS`
+- **Value**: Your Azure service principal credentials (JSON)
 
 ### How GitHub Uses These Secrets
 
@@ -71,11 +77,11 @@ The GitHub Actions workflow automatically:
 
 ## Environment Variable Priority
 
-The application uses the following priority for Mailjet configuration:
+The application uses the following priority for configuration:
 
 1. **Environment Variables** (highest priority)
-   - `MAILJET_API_KEY` / `MAILJET_API_SECRET` (development)
-   - `MAILJET_PRODUCTION_API_KEY` / `MAILJET_PRODUCTION_API_SECRET` (production)
+   - `ASPNETCORE_ENVIRONMENT`
+   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
 
 2. **Configuration Files** (fallback)
    - `appsettings.Development.json` (for development)
@@ -84,55 +90,53 @@ The application uses the following priority for Mailjet configuration:
 ## Security Best Practices
 
 ### ✅ Do's
-- Use different Mailjet accounts for development and production
+- Use different Google OAuth credentials for development and production
 - Store secrets in GitHub repository secrets (never commit to code)
-- Use sandbox mode for development and testing
-- Rotate API keys regularly
+- Use environment-specific configuration files
+- Rotate credentials regularly
 
 ### ❌ Don'ts
-- Never commit API keys to source code
+- Never commit secrets to source code
 - Never use production credentials in development
-- Never share API keys in logs or error messages
-- Never use the same account for development and production
+- Never share secrets in logs or error messages
+- Never use the same credentials for development and production
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **"Mailjet configuration missing" error**
+1. **"Google OAuth configuration missing" error**
    - Check that environment variables are set correctly
    - Verify the variable names match exactly
 
-2. **Emails not sending in development**
-   - Ensure sandbox mode is enabled
-   - Check that API credentials are valid
+2. **Authentication not working in development**
+   - Ensure Google OAuth credentials are valid
+   - Check that redirect URIs are configured correctly
 
 3. **GitHub Actions failing**
    - Verify secrets are added to GitHub repository
    - Check that secret names match the workflow file
 
-### Testing Email Functionality
+### Testing Application Functionality
 
 ```bash
-# Test email sending (development)
-curl -X POST http://localhost:5000/api/test/send-email \
-  -H "Content-Type: application/json" \
-  -d '{"to":"test@example.com","subject":"Test","body":"Test email"}'
+# Test backend health
+curl http://localhost:55555/api/health
 
-# Retrieve test codes
-curl http://localhost:5000/api/test/retrieve-codes
+# Test frontend
+curl http://localhost:55556
 ```
 
-## Mailjet Account Setup
+## Google OAuth Setup
 
 ### Development Account
-1. Create a new Mailjet account for development
-2. Enable sandbox mode
-3. Use free tier (sufficient for development/testing)
-4. Set up test email addresses
+1. Create a new Google Cloud project for development
+2. Configure OAuth consent screen
+3. Create OAuth 2.0 credentials
+4. Set up authorized redirect URIs
 
 ### Production Account
-1. Create a separate Mailjet account for production
-2. Disable sandbox mode
-3. Configure proper sending domains
-4. Set up email templates and tracking 
+1. Create a separate Google Cloud project for production
+2. Configure production OAuth consent screen
+3. Create production OAuth 2.0 credentials
+4. Set up production redirect URIs 

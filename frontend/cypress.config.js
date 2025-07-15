@@ -2,7 +2,7 @@ const { defineConfig } = require('cypress')
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:3000',
+    baseUrl: 'http://localhost:55556',
     setupNodeEvents(on, config) {
       // implement node event listeners here
       // Always disable GPU for Electron
@@ -24,7 +24,7 @@ module.exports = defineConfig({
     requestTimeout: 10000,
     responseTimeout: 10000,
     env: {
-      apiUrl: 'http://localhost:3000'
+      apiUrl: 'http://localhost:55556'
     },
     supportFile: 'cypress/support/e2e.js'
   },

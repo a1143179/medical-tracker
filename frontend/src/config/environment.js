@@ -1,6 +1,6 @@
 const config = {
     development: {
-        apiUrl: 'http://localhost:55556',
+        apiUrl: 'http://localhost:55555',
         environment: 'development'
     },
     production: {

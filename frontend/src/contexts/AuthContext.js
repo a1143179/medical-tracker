@@ -31,8 +31,8 @@ export function AuthProvider({ children }) {
       });
   }, []);
 
-  const loginWithGoogle = () => {
-    const loginUrl = `/api/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}`;
+  const loginWithGoogle = (e, rememberMe = false) => {
+    const loginUrl = `/api/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}&rememberMe=${rememberMe}`;
     window.location.href = loginUrl;
   };
 

@@ -34,7 +34,7 @@ const PrivacyPage = () => (
       </Typography>
       <Typography variant="h6" sx={{ mt: 2 }}>7. Contact Us</Typography>
       <Typography variant="body1" paragraph>
-        If you have any questions about this Privacy Policy, please contact us at support@bloodsugartracker.com.
+        If you have any questions about this Privacy Policy, please contact us at support@medicaltracker.com.
       </Typography>
     </Box>
   </Container>

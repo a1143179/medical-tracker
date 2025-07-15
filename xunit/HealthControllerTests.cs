@@ -19,9 +19,9 @@ public class HealthControllerTests
             .Options;
         
         var context = new AppDbContext(options);
-        var loggerMock = new Mock<ILogger<Backend.HealthController>>();
+        var loggerMock = new Mock<ILogger<Backend.Controllers.HealthController>>();
         
-        var controller = new Backend.HealthController(context, loggerMock.Object);
+        var controller = new Backend.Controllers.HealthController(context, loggerMock.Object);
         
         // Act
         var result = await controller.Get();
@@ -45,9 +45,9 @@ public class HealthControllerTests
             .Options;
         
         var context = new AppDbContext(options);
-        var loggerMock = new Mock<ILogger<Backend.HealthController>>();
+        var loggerMock = new Mock<ILogger<Backend.Controllers.HealthController>>();
         
-        var controller = new Backend.HealthController(context, loggerMock.Object);
+        var controller = new Backend.Controllers.HealthController(context, loggerMock.Object);
         
         // Act
         var result = await controller.Ready();

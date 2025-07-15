@@ -16,7 +16,7 @@ A comprehensive blood sugar tracking application with React frontend and .NET ba
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd bloodsugerhistory
+   cd medicaltracker
    ```
 
 2. **Set up development environment**:
@@ -110,7 +110,7 @@ cp backend/appsettings.Development.template.json backend/appsettings.Development
 ```cmd
 # Clone the repository
 git clone <repository-url>
-cd bloodsugerhistory
+cd medicaltracker
 
 # Start full development environment (database, backend, React dev server)
 start-dev.bat
@@ -133,7 +133,7 @@ start-dev.bat --backend --frontend # Start backend and React dev server only
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd bloodsugerhistory
+cd medicaltracker
 
 # Start full development environment (database, backend, React dev server)
 ./start-dev.sh
@@ -355,7 +355,7 @@ The project provides platform-specific startup scripts:
 
 ### Project Structure
 ```
-bloodsugerhistory/
+medicaltracker/
 ├── frontend/          # React application
 │   ├── src/           # React source code
 │   ├── public/        # Static assets
