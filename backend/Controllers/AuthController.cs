@@ -87,9 +87,8 @@ public class AuthController : ControllerBase
         if (!_environment.IsDevelopment())
         {
             var request = HttpContext.Request;
-            var scheme = request.Scheme; // Will be "https" in production
             var host = request.Host.Value ?? "localhost";
-            var redirectUri = $"{scheme}://{host}/api/auth/callback";
+            var redirectUri = $"https://{host}/api/auth/callback";
             properties.RedirectUri = redirectUri;
         }
 
