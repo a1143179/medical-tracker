@@ -32,6 +32,11 @@ jobs:
           cd frontend
           npm run build
 
+      - name: Run backend xUnit tests
+        run: |
+          cd xunit
+          dotnet test --no-build --verbosity normal
+
       - name: Publish backend
         run: |
           cd backend
