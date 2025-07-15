@@ -97,9 +97,19 @@ public class AuthController : ControllerBase
         try
         {
             // For testing: manually redirect to Google OAuth
+            var redirectUri = properties.RedirectUri;
+            
+            // In production, ensure the redirect URI uses HTTPS
+            if (!_environment.IsDevelopment())
+            {
+                var request = HttpContext.Request;
+                var host = request.Host.Value ?? "localhost";
+                redirectUri = $"https://{host}/api/auth/callback";
+            }
+            
             var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
                 $"client_id={Uri.EscapeDataString(googleClientId)}&" +
-                $"redirect_uri={Uri.EscapeDataString(properties.RedirectUri)}&" +
+                $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
                 $"response_type=code&" +
                 $"scope={Uri.EscapeDataString("openid email profile")}&" +
                 $"state={Uri.EscapeDataString(properties.Items["correlationId"])}";
