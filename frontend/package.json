@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@craco/craco": "^7.1.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.2.0",
@@ -26,8 +25,8 @@
     "start-server-and-test": "^2.0.3"
   },
   "scripts": {
-    "start": "set PORT=55556 && craco start",
-    "build": "craco build",
+    "start": "set PORT=55556 && react-scripts start",
+    "build": "react-scripts build",
     "build:azure": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
     "build:production": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
     "test": "react-scripts test",
