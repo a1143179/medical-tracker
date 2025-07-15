@@ -31,9 +31,32 @@ export function AuthProvider({ children }) {
       });
   }, []);
 
-  const loginWithGoogle = (e, rememberMe = false) => {
+  const loginWithGoogle = async (e, rememberMe = false) => {
     const loginUrl = `/api/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}&rememberMe=${rememberMe}`;
-    window.location.href = loginUrl;
+    try {
+      const response = await fetch(loginUrl, {
+        method: 'GET',
+        credentials: 'include',
+        redirect: 'manual', // So we can handle the redirect ourselves
+      });
+      if (response.status === 302 || response.status === 301) {
+        const location = response.headers.get('Location');
+        if (location) {
+          window.location.href = location;
+        } else {
+          // fallback: reload
+          window.location.reload();
+        }
+      } else if (response.url && response.url !== window.location.href) {
+        // Some browsers may follow the redirect automatically
+        window.location.href = response.url;
+      } else {
+        // fallback: reload
+        window.location.reload();
+      }
+    } catch (err) {
+      window.location.href = loginUrl; // fallback to old behavior
+    }
   };
 
   const logout = async () => {
