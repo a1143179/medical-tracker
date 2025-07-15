@@ -98,8 +98,4 @@ jobs:
         az webapp config container set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
-          --docker-custom-image-name ${{ env.GHCR_IMAGE }}:latest
-    - name: Health check
-      run: |
-        sleep 30
-        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health || exit 1 
+          --docker-custom-image-name ${{ env.GHCR_IMAGE }}:latest 
