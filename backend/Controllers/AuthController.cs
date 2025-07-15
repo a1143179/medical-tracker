@@ -240,7 +240,6 @@ public class AuthController : ControllerBase
         { 
             hasClientId = !string.IsNullOrEmpty(googleClientId),
             hasClientSecret = !string.IsNullOrEmpty(googleClientSecret),
-            environment = _environment.EnvironmentName,
             isAuthenticated = User.Identity?.IsAuthenticated ?? false,
             userAgent = Request.Headers["User-Agent"].ToString(),
             cookies = Request.Cookies.Keys.ToList(),
