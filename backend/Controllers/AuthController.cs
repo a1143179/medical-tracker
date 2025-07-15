@@ -99,12 +99,20 @@ public class AuthController : ControllerBase
             // For testing: manually redirect to Google OAuth
             var redirectUri = properties.RedirectUri;
             
+            _logger.LogInformation("Initial redirectUri from properties: {RedirectUri}", redirectUri);
+            _logger.LogInformation("Environment: {Environment}, IsDevelopment: {IsDevelopment}", _environment.EnvironmentName, _environment.IsDevelopment());
+            
             // In production, ensure the redirect URI uses HTTPS
             if (!_environment.IsDevelopment())
             {
                 var request = HttpContext.Request;
                 var host = request.Host.Value ?? "localhost";
                 redirectUri = $"https://{host}/api/auth/callback";
+                _logger.LogInformation("Production redirectUri constructed: {RedirectUri}", redirectUri);
+            }
+            else
+            {
+                _logger.LogInformation("Development mode, using original redirectUri: {RedirectUri}", redirectUri);
             }
             
             var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
@@ -114,7 +122,7 @@ public class AuthController : ControllerBase
                 $"scope={Uri.EscapeDataString("openid email profile")}&" +
                 $"state={Uri.EscapeDataString(properties.Items["correlationId"])}";
             
-            _logger.LogInformation("Manual redirect to Google OAuth URL: {Url}", googleOAuthUrl);
+            _logger.LogInformation("Final Google OAuth URL: {Url}", googleOAuthUrl);
             return Redirect(googleOAuthUrl);
             
             // Original code (commented out for testing):
