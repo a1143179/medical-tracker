@@ -102,11 +102,20 @@ public class AuthController : ControllerBase
             _logger.LogInformation("Initial redirectUri from properties: {RedirectUri}", redirectUri);
             _logger.LogInformation("Environment: {Environment}, IsDevelopment: {IsDevelopment}", _environment.EnvironmentName, _environment.IsDevelopment());
             
-            // In production, ensure the redirect URI uses HTTPS
-            if (!_environment.IsDevelopment())
+            // Force full URL for production (bypass environment detection issues)
+            var request = HttpContext.Request;
+            var host = request.Host.Value ?? "localhost";
+            var scheme = request.Scheme;
+            
+            if (host.Contains("azurewebsites.net") || host.Contains("medicaltracker"))
             {
-                var request = HttpContext.Request;
-                var host = request.Host.Value ?? "localhost";
+                // Production - force HTTPS
+                redirectUri = $"https://medicaltracker.azurewebsites.net/api/auth/callback";
+                _logger.LogInformation("Production detected by hostname, using forced redirectUri: {RedirectUri}", redirectUri);
+            }
+            else if (!_environment.IsDevelopment())
+            {
+                // Production - use HTTPS
                 redirectUri = $"https://{host}/api/auth/callback";
                 _logger.LogInformation("Production redirectUri constructed: {RedirectUri}", redirectUri);
             }
