@@ -28,7 +28,7 @@
   "scripts": {
     "start": "set PORT=55556 && craco start",
     "build": "craco build",
-    "postbuild": "xcopy /E /I /Y build ..\\backend\\wwwroot\\",
+    "postbuild": "cp -r build/* ../backend/wwwroot/ 2>/dev/null || xcopy /E /I /Y build ..\\backend\\wwwroot\\",
     "build:azure": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
     "build:production": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
     "test": "react-scripts test",
