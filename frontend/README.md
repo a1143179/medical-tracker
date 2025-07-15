@@ -126,7 +126,7 @@ All API calls use AJAX (fetch API) for seamless user experience.
 Create a `.env` file in the frontend directory for environment-specific configuration:
 
 ```
-REACT_APP_API_URL=http://localhost:3000
+REACT_APP_API_URL=http://localhost:55556
 ```
 
 ## Security Notes
@@ -169,8 +169,8 @@ This project uses [Cypress](https://www.cypress.io/) for end-to-end (E2E) testin
    npm install
    ```
 2. **Start the backend and frontend:**
-   - Backend: `dotnet run --project ../backend`
-   - Frontend: `npm start`
+   - Backend: `dotnet run --project ../backend` (on port 55556)
+   - Frontend: `npm start` (on port 55555)
 3. **Run Cypress in interactive mode:**
    ```sh
    npx cypress open

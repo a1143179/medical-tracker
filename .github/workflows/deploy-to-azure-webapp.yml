@@ -1,4 +1,4 @@
-name: Deploy React Frontend to Azure Web App
+name: Deploy Fullstack App to Azure Web App
 
 on:
   push:
@@ -17,15 +17,29 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
-      - name: Build React app
-        run: npm run build
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Publish backend
+        run: |
+          cd backend
+          dotnet publish -c Release -o publish
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: medical-tracker-frontend # Replace with your Azure Web App name if different
+          app-name: medicaltracker
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: build 
+          package: backend/publish 

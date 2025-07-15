@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\workspace\\bloodsugerhistory\\xunit\\Backend.Tests.csproj": {}
+    "D:\\workspace\\medicaltracker\\xunit\\Backend.Tests.csproj": {}
   },
   "projects": {
-    "D:\\workspace\\bloodsugerhistory\\backend\\backend.csproj": {
+    "D:\\workspace\\medicaltracker\\backend\\backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\workspace\\bloodsugerhistory\\backend\\backend.csproj",
+        "projectUniqueName": "D:\\workspace\\medicaltracker\\backend\\backend.csproj",
         "projectName": "backend",
-        "projectPath": "D:\\workspace\\bloodsugerhistory\\backend\\backend.csproj",
+        "projectPath": "D:\\workspace\\medicaltracker\\backend\\backend.csproj",
         "packagesPath": "C:\\Users\\weiwa\\.nuget\\packages\\",
-        "outputPath": "D:\\workspace\\bloodsugerhistory\\backend\\obj\\",
+        "outputPath": "D:\\workspace\\medicaltracker\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\weiwa\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -48,9 +48,19 @@
               "target": "Package",
               "version": "[9.0.6, )"
             },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[9.0.6, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[9.0.6, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.7, )"
             },
             "Microsoft.EntityFrameworkCore.InMemory": {
               "target": "Package",
@@ -61,6 +71,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[9.0.6, )"
+            },
+            "Microsoft.IdentityModel.Tokens": {
+              "target": "Package",
+              "version": "[8.3.0, )"
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
@@ -77,6 +91,10 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[9.0.1, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.3.0, )"
             }
           },
           "imports": [
@@ -102,14 +120,14 @@
         }
       }
     },
-    "D:\\workspace\\bloodsugerhistory\\xunit\\Backend.Tests.csproj": {
+    "D:\\workspace\\medicaltracker\\xunit\\Backend.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\workspace\\bloodsugerhistory\\xunit\\Backend.Tests.csproj",
+        "projectUniqueName": "D:\\workspace\\medicaltracker\\xunit\\Backend.Tests.csproj",
         "projectName": "Backend.Tests",
-        "projectPath": "D:\\workspace\\bloodsugerhistory\\xunit\\Backend.Tests.csproj",
+        "projectPath": "D:\\workspace\\medicaltracker\\xunit\\Backend.Tests.csproj",
         "packagesPath": "C:\\Users\\weiwa\\.nuget\\packages\\",
-        "outputPath": "D:\\workspace\\bloodsugerhistory\\xunit\\obj\\",
+        "outputPath": "D:\\workspace\\medicaltracker\\xunit\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\weiwa\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -124,8 +142,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "D:\\workspace\\bloodsugerhistory\\backend\\backend.csproj": {
-                "projectPath": "D:\\workspace\\bloodsugerhistory\\backend\\backend.csproj"
+              "D:\\workspace\\medicaltracker\\backend\\backend.csproj": {
+                "projectPath": "D:\\workspace\\medicaltracker\\backend\\backend.csproj"
               }
             }
           }
@@ -146,6 +164,18 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[9.0.7, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[9.0.7, )"
+            },
+            "Microsoft.EntityFrameworkCore.Relational": {
+              "target": "Package",
+              "version": "[9.0.7, )"
+            },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",
               "version": "[17.12.0, )"
@@ -181,6 +211,9 @@
           "assetTargetFallback": true,
           "warn": true,
           "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
             "Microsoft.NETCore.App": {
               "privateAssets": "all"
             }
