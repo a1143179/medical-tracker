@@ -124,10 +124,12 @@ public class AuthController : ControllerBase
     [HttpGet("callback")]
     public async Task<IActionResult> Callback()
     {
+        _logger.LogInformation("OAuth callback hit");
         // Authenticate the user
         var authenticateResult = await HttpContext.AuthenticateAsync();
         if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
         {
+            _logger.LogWarning("OAuth authentication failed or principal is null");
             // Handle failed authentication
             return Redirect("/login?error=oauth_failed");
         }
@@ -136,8 +138,11 @@ public class AuthController : ControllerBase
         var email = authenticateResult.Principal.FindFirst(ClaimTypes.Email)?.Value;
         var name = authenticateResult.Principal.FindFirst(ClaimTypes.Name)?.Value;
 
+        _logger.LogInformation("OAuth callback claims: email={Email}, name={Name}", email, name);
+
         if (string.IsNullOrEmpty(email))
         {
+            _logger.LogWarning("OAuth callback missing email claim");
             return Redirect("/login?error=missing_email");
         }
 
@@ -145,13 +150,19 @@ public class AuthController : ControllerBase
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
         {
+            _logger.LogInformation("Creating new user: {Email}, {Name}", email, name);
             user = new User { Email = email, Name = name };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
         }
+        else
+        {
+            _logger.LogInformation("Found existing user: {Email}, {Name}", user.Email, user.Name);
+        }
 
         // Generate JWT
         var jwt = _jwtService.GenerateToken(user, false);
+        _logger.LogInformation("Generated JWT for user: {Email}", user.Email);
 
         // Set JWT as cookie
         Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
@@ -161,8 +172,10 @@ public class AuthController : ControllerBase
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
+        _logger.LogInformation("Set JWT cookie for user: {Email}", user.Email);
 
         // Redirect to frontend (e.g., dashboard)
+        _logger.LogInformation("Redirecting user {Email} to /", user.Email);
         return Redirect("/");
     }
 
