@@ -25,6 +25,7 @@ Not
 
 # Ignore build artifacts
 build/ 
+frontend/build/
 
 # Ignore environment files
 .env

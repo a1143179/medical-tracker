@@ -1,42 +1,75 @@
-name: Deploy Frontend to Azure Static Web Apps
+name: Deploy Medical Tracker to Azure
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+
+env:
+  AZURE_WEBAPP_NAME: medicaltracker
+  RESOURCE_GROUP: medical-tracker-rg
+  GHCR_IMAGE: ghcr.io/${{ github.repository }}/medicaltracker
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.x'
-
-      - name: Install dependencies
-        run: |
-          cd frontend
-          npm ci
-
-      - name: Run tests
-        run: |
-          cd frontend
-          npm test -- --watchAll=false
-
-      - name: Build
-        run: |
-          cd frontend
-          npm run build
-
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for GitHub integrations (i.e. PR comments)
-          action: 'upload'
-          app_location: "/"
-          output_location: "build" 
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        
+    - name: Set up .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+        
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+        
+    - name: Run backend xUnit tests
+      run: |
+        cd xunit
+        dotnet test --no-build --verbosity normal
+        
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} -t ${{ env.GHCR_IMAGE }}:latest .
+        docker push ${{ env.GHCR_IMAGE }}:${{ github.sha }}
+        docker push ${{ env.GHCR_IMAGE }}:latest
+        
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        
+    - name: Deploy to Azure Web App for Containers
+      run: |
+        az webapp config container set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --docker-custom-image-name ${{ env.GHCR_IMAGE }}:latest
+        
+    - name: Health check
+      run: |
+        sleep 30
+        curl -f https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health || exit 1 
