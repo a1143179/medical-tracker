@@ -243,7 +243,8 @@ public class AuthController : ControllerBase
             environment = _environment.EnvironmentName,
             isAuthenticated = User.Identity?.IsAuthenticated ?? false,
             userAgent = Request.Headers["User-Agent"].ToString(),
-            cookies = Request.Cookies.Keys.ToList()
+            cookies = Request.Cookies.Keys.ToList(),
+            environmentName = _environment.EnvironmentName
         });
     }
 } 
