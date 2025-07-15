@@ -189,7 +189,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         setActiveTab(0); // Go to records tab
       }
     } catch (error) {
-      console.error('Error submitting record:', error);
       showMessage(t('failedToSaveRecord'), 'error');
     }
   };
@@ -549,7 +548,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label={t('bloodSugarLevelLabel')}
+              label={t('medicalLevelLabel')}
               type="text"
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
@@ -628,7 +627,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label={t('bloodSugarLevelLabel')}
+              label={t('medicalLevelLabel')}
               type="text"
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
@@ -975,7 +974,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         />
                         <TextField
                           fullWidth
-                          label={t('bloodSugarLevelLabel')}
+                          label={t('medicalLevelLabel')}
                           type="number"
                           step="0.1"
                           name="level"
@@ -1054,7 +1053,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label={t('bloodSugarLevelLabel')}
+              label={t('medicalLevelLabel')}
               type="number"
               step="0.1"
               name="level"

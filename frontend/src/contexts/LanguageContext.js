@@ -114,7 +114,7 @@ export const LanguageProvider = ({ children }) => {
   const translations = {
     en: {
       // App Bar
-      appTitle: 'Blood Sugar Tracker',
+      appTitle: 'Medical Tracker',
       
       // Navigation
       dashboard: 'Dashboard',
@@ -128,13 +128,13 @@ export const LanguageProvider = ({ children }) => {
       totalRecords: 'Total Records',
       noData: 'No data',
       basedOnReadings: 'Based on {count} readings',
-      bloodSugarMeasurements: 'Blood sugar measurements',
+      bloodSugarMeasurements: 'Medical Measurements',
       
       // Records Table
-      bloodSugarRecords: 'Blood Sugar Records',
+      bloodSugarRecords: 'Medical Records',
       addRecord: 'Add New Record',
       dateTime: 'Date & Time',
-      bloodSugarLevel: 'Blood Sugar (mmol/L)',
+      bloodSugarLevel: 'Medical Value (mmol/L)',
       status: 'Status',
       trend: 'Trend',
       notes: 'Notes',
@@ -145,20 +145,20 @@ export const LanguageProvider = ({ children }) => {
       ofRecords: '{from}-{to} of {count}',
       
       // Analytics
-      bloodSugarTrends: 'Blood Sugar Trends',
+      bloodSugarTrends: 'Medical Trends',
       recentReadings: 'Recent Readings',
       hour24Average: 'Daily Pattern (Hourly Averages)',
       average: 'Average',
       day: 'Day',
       noDataForAnalytics: 'No data available for analytics',
-      addRecordsForCharts: 'Add some blood sugar records to see charts and analytics',
+      addRecordsForCharts: 'Add some medical records to see charts and analytics',
       
       // Add/Edit Record
-      addNewBloodSugarRecord: 'Add New Blood Sugar Record',
-      editBloodSugarRecord: 'Edit Blood Sugar Record',
+      addNewBloodSugarRecord: 'Add New Medical Record',
+      editBloodSugarRecord: 'Edit Medical Record',
       dateTimeLabel: 'Date & Time',
-      bloodSugarLevelLabel: 'Blood Sugar Level (mmol/L)',
-      enterBloodSugarReading: 'Enter your blood sugar reading',
+      bloodSugarLevelLabel: 'Medical Value (mmol/L)',
+      enterBloodSugarReading: 'Enter your medical value',
       notesLabel: 'Notes',
       optionalNotes: 'Optional notes about this reading',
       cancel: 'Cancel',
@@ -225,11 +225,11 @@ export const LanguageProvider = ({ children }) => {
 
       // Login Page Specific
       whatYoullGet: "What you'll get here:",
-      trackBloodSugar: 'Track blood sugar levels with precision',
+      trackBloodSugar: 'Track medical values with precision',
       viewTrends: 'View trends and analytics',
       exportData: 'Export data for healthcare providers',
       welcomeBack: 'Welcome Back',
-      signInToAccess: 'Sign in to access your personalized blood sugar tracking dashboard',
+      signInToAccess: 'Sign in to access your personalized medical tracking dashboard',
       signInWithGoogle: 'Sign in with Google',
       rememberMe: 'Keep me signed in for 30 days',
       secureAuth: 'Secure authentication powered by Google',
@@ -240,7 +240,7 @@ export const LanguageProvider = ({ children }) => {
     },
     zh: {
       // App Bar
-      appTitle: '血糖追踪器',
+      appTitle: 'Medical Tracker',
       
       // Navigation
       dashboard: '仪表板',
@@ -254,13 +254,13 @@ export const LanguageProvider = ({ children }) => {
       totalRecords: '总记录数',
       noData: '无数据',
       basedOnReadings: '基于 {count} 次读数',
-      bloodSugarMeasurements: '血糖测量',
+      bloodSugarMeasurements: 'Medical Measurements',
       
       // Records Table
-      bloodSugarRecords: '血糖记录',
+      bloodSugarRecords: 'Medical Records',
       addRecord: '添加新记录',
       dateTime: '日期和时间',
-      bloodSugarLevel: '血糖 (mmol/L)',
+      bloodSugarLevel: 'Medical Value (mmol/L)',
       status: '状态',
       trend: '趋势',
       notes: '备注',
@@ -271,7 +271,7 @@ export const LanguageProvider = ({ children }) => {
       ofRecords: '第 {from}-{to} 条，共 {count} 条',
       
       // Analytics
-      bloodSugarTrends: '血糖趋势',
+      bloodSugarTrends: 'Medical Trends',
       recentReadings: '最近读数',
       hour24Average: '每日模式 (小时平均值)',
       average: '平均值',
@@ -283,7 +283,7 @@ export const LanguageProvider = ({ children }) => {
       addNewBloodSugarRecord: '添加新血糖记录',
       editBloodSugarRecord: '编辑血糖记录',
       dateTimeLabel: '日期和时间',
-      bloodSugarLevelLabel: '血糖水平 (mmol/L)',
+      bloodSugarLevelLabel: 'Medical Value (mmol/L)',
       enterBloodSugarReading: '输入您的血糖读数',
       notesLabel: '备注',
       optionalNotes: '关于此读数的可选备注',

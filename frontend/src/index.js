@@ -6,7 +6,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-// Create a custom theme for the blood sugar tracker
+// Create a custom theme for the Medical Tracker
 const theme = createTheme({
   palette: {
     primary: {

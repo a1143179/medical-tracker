@@ -1,12 +1,12 @@
-# Blood Sugar Tracker Frontend
+# Medical Tracker Frontend
 
-A React-based single page application for tracking blood sugar levels with Google OAuth authentication.
+A React-based single page application for tracking medical records with Google OAuth authentication.
 
 ## Features
 
 - **Single Page Application (SPA)**: Built with React Router for seamless navigation
 - **Google OAuth Authentication**: Secure login using Google accounts
-- **Blood Sugar Tracking**: Add, edit, and delete blood sugar records
+- **Medical Tracking**: Add, edit, and delete medical records
 - **Analytics Dashboard**: Visual charts and statistics
 - **Responsive Design**: Works on desktop and mobile devices
 - **Real-time Updates**: AJAX-based data operations
@@ -54,7 +54,7 @@ The application will be available at `http://localhost:3000`
 ```
 src/
 ├── components/
-│   ├── Dashboard.js      # Main blood sugar tracking interface
+│   ├── Dashboard.js      # Main medical tracking interface
 │   ├── Header.js         # Navigation header with user info
 │   ├── GoogleLogin.js    # Google OAuth login page
 │   └── ProtectedRoute.js # Route protection component
@@ -89,7 +89,7 @@ src/
 - **Error Handling**: Graceful error message display
 
 ### Dashboard
-- **User-Specific Records**: Each user only sees their own blood sugar records
+- **User-Specific Records**: Each user only sees their own medical records
 - **Secure Data Access**: Users can only view, edit, and delete their own data
 - **Real-time Updates**: Changes are immediately reflected in the interface
 - **Data Privacy**: Complete isolation between user accounts
@@ -105,7 +105,7 @@ src/
 
 The frontend communicates with the backend API for:
 - **Authentication**: `/api/auth/*` endpoints for OAuth flow
-- **Blood Sugar Records**: `/api/records` for CRUD operations
+- **Medical Records**: `/api/records` for CRUD operations
 - **User Management**: `/api/auth/me` for user info
 - **Language Preferences**: `/api/auth/language` for language settings
 
