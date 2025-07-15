@@ -235,7 +235,7 @@ public class AuthController : ControllerBase
     {
         var googleClientId = _configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         var googleClientSecret = _configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
-        
+        _logger.LogInformation("googleClientId={gci}", googleClientId);
         return Ok(new 
         { 
             hasClientId = !string.IsNullOrEmpty(googleClientId),
