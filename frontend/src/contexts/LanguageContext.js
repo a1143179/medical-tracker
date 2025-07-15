@@ -224,7 +224,7 @@ export const LanguageProvider = ({ children }) => {
       back: 'Back',
 
       // Login Page Specific
-      whatYoullGet: "What you'll get:",
+      whatYoullGet: "What you'll get here:",
       trackBloodSugar: 'Track blood sugar levels with precision',
       viewTrends: 'View trends and analytics',
       exportData: 'Export data for healthcare providers',
