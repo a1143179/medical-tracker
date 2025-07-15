@@ -8,6 +8,11 @@ using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add this log to confirm logging works in production
+builder.Logging.AddConsole();
+var logger = LoggerFactory.Create(logging => logging.AddConsole()).CreateLogger("Startup");
+logger.LogInformation("Application starting up. Environment: {Environment}", builder.Environment.EnvironmentName);
+
 // Logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -187,8 +192,8 @@ builder.Services.AddSession(options =>
 var app = builder.Build();
 
 // Logging
-var logger = app.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Google OAuth configuration - Environment: {Environment}", app.Environment.EnvironmentName);
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+startupLogger.LogInformation("Application starting up. Environment: {Environment}", app.Environment.EnvironmentName);
 
 // DB Migrations
 using (var scope = app.Services.CreateScope())
