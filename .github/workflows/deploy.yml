@@ -12,63 +12,88 @@ env:
   GHCR_IMAGE: ghcr.io/${{ github.repository }}/medicaltracker
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    
+    outputs:
+      frontend-build-path: ${{ steps.frontend-build.outputs.build-path }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
-        
     - name: Set up .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
-        
     - name: Install frontend dependencies
       run: |
         cd frontend
         npm ci
-        
     - name: Build frontend
+      id: frontend-build
       run: |
         cd frontend
         npm run build
-        
+        echo "build-path=frontend/build" >> $GITHUB_OUTPUT
+    - name: Upload frontend build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: frontend/build
+    - name: Upload backend/xunit artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: xunit-project
+        path: xunit
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download xunit artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: xunit-project
+        path: xunit
     - name: Run backend xUnit tests
       run: |
         cd xunit
         dotnet test --no-build --verbosity normal
-        
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Download frontend build artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: frontend-build
+        path: frontend/build
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GHCR_PAT_TOKEN }}
-        
     - name: Build and push Docker image
       run: |
         docker build -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} -t ${{ env.GHCR_IMAGE }}:latest .
         docker push ${{ env.GHCR_IMAGE }}:${{ github.sha }}
         docker push ${{ env.GHCR_IMAGE }}:latest
-        
     - name: Azure Login
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-        
     - name: Deploy to Azure Web App for Containers
       run: |
         az webapp config container set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
           --resource-group ${{ env.RESOURCE_GROUP }} \
           --docker-custom-image-name ${{ env.GHCR_IMAGE }}:latest
-        
     - name: Health check
       run: |
         sleep 30
