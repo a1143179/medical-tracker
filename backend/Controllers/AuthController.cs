@@ -96,7 +96,19 @@ public class AuthController : ControllerBase
 
         try
         {
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            // For testing: manually redirect to Google OAuth
+            var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
+                $"client_id={Uri.EscapeDataString(googleClientId)}&" +
+                $"redirect_uri={Uri.EscapeDataString(properties.RedirectUri)}&" +
+                $"response_type=code&" +
+                $"scope={Uri.EscapeDataString("openid email profile")}&" +
+                $"state={Uri.EscapeDataString(properties.Items["correlationId"])}";
+            
+            _logger.LogInformation("Manual redirect to Google OAuth URL: {Url}", googleOAuthUrl);
+            return Redirect(googleOAuthUrl);
+            
+            // Original code (commented out for testing):
+            // return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
         catch (Exception ex)
         {
