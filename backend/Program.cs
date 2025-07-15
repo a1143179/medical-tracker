@@ -66,9 +66,8 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             options.Events.OnRedirectToAuthorizationEndpoint = context =>
             {
                 var request = context.HttpContext.Request;
-                var scheme = request.Scheme;
                 var host = request.Host.Value ?? "localhost";
-                context.RedirectUri = $"{scheme}://{host}/api/auth/callback";
+                context.RedirectUri = $"https://{host}/api/auth/callback";
                 return Task.CompletedTask;
             };
         }
@@ -312,10 +311,14 @@ if (app.Environment.IsDevelopment())
         )
         {
             var client = new HttpClient();
-            var frontendUrl = $"http://localhost:55556{context.Request.Path}{context.Request.QueryString}";
+            var frontendUrl = builder.Environment.IsDevelopment()
+                ? $"http://localhost:55556{context.Request.Path}{context.Request.QueryString}"
+                : $"https://medicaltracker.azurewebsites.net{context.Request.Path}{context.Request.QueryString}";
             var frontendResponse = await client.GetAsync(frontendUrl);
             if (frontendResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
-                frontendResponse = await client.GetAsync("http://localhost:55556/index.html");
+                frontendResponse = builder.Environment.IsDevelopment()
+                    ? await client.GetAsync("http://localhost:55556/index.html")
+                    : await client.GetAsync("https://medicaltracker.azurewebsites.net/index.html");
             context.Response.StatusCode = (int)frontendResponse.StatusCode;
             foreach (var header in frontendResponse.Headers)
                 context.Response.Headers[header.Key] = header.Value.ToArray();
