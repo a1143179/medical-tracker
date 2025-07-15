@@ -33,6 +33,7 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = (e, rememberMe = false) => {
     const loginUrl = `/api/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}&rememberMe=${rememberMe}`;
+    console.log('Redirecting to login URL:', loginUrl);
     window.location.href = loginUrl;
   };
 
