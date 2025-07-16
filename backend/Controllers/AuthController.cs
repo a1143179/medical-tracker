@@ -121,7 +121,9 @@ public class AuthController : ControllerBase
             }
             else
             {
-                _logger.LogInformation("Development mode, using original redirectUri: {RedirectUri}", redirectUri);
+                // Local development - use localhost:5000
+                redirectUri = $"http://localhost:5000/api/auth/callback";
+                _logger.LogInformation("Development mode, using localhost:5000 redirectUri: {RedirectUri}", redirectUri);
             }
             
             var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
