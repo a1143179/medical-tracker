@@ -123,7 +123,8 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.Events.OnRemoteFailure = context =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogError("OAuth remote failure: {Error}", context.Failure?.Message);
+            var referer = context.Request.Headers["Referer"].ToString();
+            logger.LogError("OAuth remote failure: {Error}, Referer: {Referer}", context.Failure?.Message, referer);
             context.HttpContext.Session.Clear();
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
