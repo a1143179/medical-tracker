@@ -123,8 +123,12 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.Events.OnRemoteFailure = context =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var headers = context.Request.Headers.Select(h => $"{h.Key}: {h.Value}").ToList();
+            var userAgent = context.Request.Headers["User-Agent"].ToString();
+            var accept = context.Request.Headers["Accept"].ToString();
+            var xRequestedWith = context.Request.Headers["X-Requested-With"].ToString();
             var referer = context.Request.Headers["Referer"].ToString();
-            logger.LogError("OAuth remote failure: {Error}, Referer: {Referer}", context.Failure?.Message, referer);
+            logger.LogError("OAuth remote failure: {Error}, Referer: {Referer}, User-Agent: {UserAgent}, Accept: {Accept}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", context.Failure?.Message, referer, userAgent, accept, xRequestedWith, string.Join(" | ", headers));
             context.HttpContext.Session.Clear();
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
@@ -133,10 +137,17 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.Events.OnTicketReceived = async context =>
         {
             var userService = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            var headers = context.HttpContext.Request.Headers.Select(h => $"{h.Key}: {h.Value}").ToList();
+            var userAgent = context.HttpContext.Request.Headers["User-Agent"].ToString();
+            var accept = context.HttpContext.Request.Headers["Accept"].ToString();
+            var xRequestedWith = context.HttpContext.Request.Headers["X-Requested-With"].ToString();
+            var referer = context.HttpContext.Request.Headers["Referer"].ToString();
+            logger.LogInformation("OAuth ticket received. Referer: {Referer}, User-Agent: {UserAgent}, Accept: {Accept}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", referer, userAgent, accept, xRequestedWith, string.Join(" | ", headers));
             var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
             var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            
+            // Do not redeclare logger; it is already defined above
+
             var claims = context.Principal != null ? context.Principal.Claims : Enumerable.Empty<Claim>();
             var email = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
             var name = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
@@ -181,6 +192,9 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
                 context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
                 logger.LogInformation("OAuth callback successful for user: {Email}", email);
             }
+            context.Response.Redirect("/dashboard");
+            context.HandleResponse();
+            return;
         };
     });
 }
