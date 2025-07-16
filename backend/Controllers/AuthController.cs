@@ -86,59 +86,6 @@ public class AuthController : ControllerBase
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
-    [HttpGet("callback")]
-    public async Task<IActionResult> Callback()
-    {
-        // Authenticate the user
-        var authenticateResult = await HttpContext.AuthenticateAsync();
-        if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
-        {
-            // Handle failed authentication
-            return Redirect("/login?error=oauth_failed");
-        }
-
-        // Extract user info from claims
-        string email = null;
-        string name = null;
-
-        var emailClaim = authenticateResult.Principal.FindFirst(ClaimTypes.Email);
-        if (emailClaim != null)
-            email = emailClaim.Value;
-
-        var nameClaim = authenticateResult.Principal.FindFirst(ClaimTypes.Name);
-        if (nameClaim != null)
-            name = nameClaim.Value;
-
-        if (string.IsNullOrEmpty(email))
-        {
-            return Redirect("/login?error=missing_email");
-        }
-
-        // (Optional) Create or update user in your database
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user == null)
-        {
-            user = new User { Email = email ?? string.Empty, Name = name ?? string.Empty };
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-        }
-
-        // Generate JWT
-        var jwt = _jwtService.GenerateToken(user, false);
-
-        // Set JWT as cookie
-        Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Lax,
-            Expires = DateTimeOffset.UtcNow.AddDays(7)
-        });
-
-        // Redirect to frontend (e.g., dashboard)
-        return Redirect("/");
-    }
-
 
     [HttpPost("logout")]
     public IActionResult Logout()

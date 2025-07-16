@@ -102,6 +102,8 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         {
             options.Events.OnRedirectToAuthorizationEndpoint = context =>
             {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
                 var request = context.HttpContext.Request;
                 var host = request.Host.Value ?? "localhost";
                 
@@ -115,8 +117,7 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
                     context.RedirectUri = $"https://{host}/api/auth/callback";
                 }
                 
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
+                logger.LogInformation("AFTER Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
                 return Task.CompletedTask;
             };
         }
