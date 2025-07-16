@@ -262,7 +262,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
+if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 if (!app.Environment.IsDevelopment())
 {
