@@ -232,10 +232,14 @@ if (app.Environment.IsDevelopment())
 // Add forwarded headers for Azure App Service BEFORE other middleware
 if (!app.Environment.IsDevelopment())
 {
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    var forwardedHeadersOptions = new ForwardedHeadersOptions
     {
         ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
-    });
+        // Trust all proxies and networks (required for Azure)
+        KnownNetworks = { },
+        KnownProxies = { }
+    };
+    app.UseForwardedHeaders(forwardedHeadersOptions);
 }
 
 if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
