@@ -220,6 +220,15 @@ if (!app.Environment.IsDevelopment())
         KnownProxies = { }
     };
     app.UseForwardedHeaders(forwardedHeadersOptions);
+    // Add logging for forwarded headers
+    app.Use(async (context, next) =>
+    {
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        var proto = context.Request.Headers["X-Forwarded-Proto"].ToString();
+        var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
+        logger.LogInformation("Forwarded Headers: X-Forwarded-Proto={Proto}, X-Forwarded-For={ForwardedFor}, Scheme={Scheme}", proto, forwardedFor, context.Request.Scheme);
+        await next();
+    });
 }
 
 // Logging
