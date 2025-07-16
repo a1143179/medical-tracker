@@ -30,7 +30,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IJwtService, JwtService>();
-builder.Services.AddAuthentication();
+
+// Session
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
+    options.Cookie.MaxAge = TimeSpan.FromDays(30);
+    options.Cookie.Name = "MedicalTracker.Session.Data";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+});
 
 // Google OAuth
 var googleClientId = builder.Configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
@@ -70,6 +82,8 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.SaveTokens = true;
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
+        options.CorrelationCookie.HttpOnly = true;
+        options.CorrelationCookie.IsEssential = true;
         
         // Fix redirect URI for production
         if (!builder.Environment.IsDevelopment())
@@ -98,13 +112,6 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
             logger.LogError("OAuth remote failure: {Error}", context.Failure?.Message);
-            if (context.Failure?.Message?.Contains("oauth state was missing or invalid") == true && context.HttpContext.User?.Identity?.IsAuthenticated == true)
-            {
-                logger.LogInformation("OAuth state error but user is authenticated, redirecting to dashboard");
-                context.Response.Redirect("/dashboard");
-                context.HandleResponse();
-                return Task.CompletedTask;
-            }
             context.HttpContext.Session.Clear();
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
@@ -198,19 +205,6 @@ else
     builder.Services.AddDataProtection();
 }
 
-// Session
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-    options.Cookie.MaxAge = TimeSpan.FromDays(30);
-    options.Cookie.Name = "MedicalTracker.Session.Data";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-});
-
 var app = builder.Build();
 
 // Logging
@@ -230,6 +224,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Add forwarded headers for Azure App Service BEFORE other middleware
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    });
+}
+
 if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
     app.UseHttpsRedirection();
 if (!app.Environment.IsDevelopment())
@@ -249,6 +253,7 @@ app.Use(async (context, next) =>
         return;
     }
 });
+
 app.Use(async (context, next) =>
 {
     var oldSessionCookie = context.Request.Cookies[".AspNetCore.Session"];
@@ -256,7 +261,9 @@ app.Use(async (context, next) =>
         context.Response.Cookies.Delete(".AspNetCore.Session");
     await next();
 });
+
 app.UseSession();
+
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/api/auth"))
@@ -270,69 +277,16 @@ app.Use(async (context, next) =>
             var code = context.Request.Query["code"].ToString();
             logger.LogInformation("Callback middleware - State: '{State}', Code: '{Code}', StateEmpty: {StateEmpty}, CodeEmpty: {CodeEmpty}", 
                 state, code, string.IsNullOrEmpty(state), string.IsNullOrEmpty(code));
-            
-            if (string.IsNullOrEmpty(state) && string.IsNullOrEmpty(code))
-            {
-                logger.LogWarning("Duplicate callback request detected without OAuth parameters");
-                if (context.User?.Identity?.IsAuthenticated == true)
-                {
-                    context.Response.Redirect("/dashboard");
-                    return;
-                }
-                context.Response.Redirect("/login?error=duplicate_callback");
-                return;
-            }
         }
     }
     await next();
 });
 
-// Add forwarded headers for Azure App Service
-if (!app.Environment.IsDevelopment())
-{
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
-    });
-}
-
-app.Use(async (context, next) =>
-{
-    var correlationCookie = context.Request.Cookies[".AspNetCore.Correlation.Google"];
-    if (!string.IsNullOrEmpty(correlationCookie))
-        context.Response.Cookies.Delete(".AspNetCore.Correlation.Google");
-    await next();
-});
-app.Use(async (context, next) =>
-{
-    try { await next(); }
-    catch (Exception ex) when (ex.Message.Contains("oauth state was missing or invalid"))
-    {
-        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "OAuth state error detected - clearing cookies and redirecting");
-        context.Response.Cookies.Delete("MedicalTracker.OAuth.State");
-        context.Response.Cookies.Delete("MedicalTracker.Session.Data");
-        context.Response.Cookies.Delete(".AspNetCore.Correlation.Google");
-        context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
-        context.Session.Clear();
-        context.Response.Redirect("/login?error=oauth_state_invalid");
-        return;
-    }
-    catch (Exception ex) when (ex.Message.Contains("key") && ex.Message.Contains("not found"))
-    {
-        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Data protection key error - clearing cookies");
-        context.Response.Cookies.Delete("MedicalTracker.Session.Data");
-        context.Response.Cookies.Delete("MedicalTracker.OAuth.State");
-        context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
-        context.Response.Redirect("/login?error=session_expired");
-        return;
-    }
-});
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+
 if (app.Environment.IsDevelopment())
 {
     app.Use(async (context, next) =>
@@ -364,4 +318,5 @@ if (app.Environment.IsDevelopment())
         await next();
     });
 }
+
 app.Run();
