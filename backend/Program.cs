@@ -173,6 +173,22 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             context.HandleResponse();
             return;
         };
+        if (!builder.Environment.IsDevelopment())
+        {
+            options.Events.OnRedirectToAuthorizationEndpoint = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
+                // Replace http with https in the redirect_uri parameter for production
+                var googleUrl = context.RedirectUri.Replace(
+                    "redirect_uri=http%3A%2F%2Fmedicaltracker.azurewebsites.net%2Fapi%2Fauth%2Fcallback",
+                    "redirect_uri=https%3A%2F%2Fmedicaltracker.azurewebsites.net%2Fapi%2Fauth%2Fcallback"
+                );
+                context.Response.Redirect(googleUrl);
+                logger.LogInformation("FORCED Google OAuth redirect to: {GoogleUrl}", googleUrl);
+                return Task.CompletedTask;
+            };
+        }
     });
 }
 else
@@ -232,14 +248,10 @@ if (app.Environment.IsDevelopment())
 // Add forwarded headers for Azure App Service BEFORE other middleware
 if (!app.Environment.IsDevelopment())
 {
-    var forwardedHeadersOptions = new ForwardedHeadersOptions
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
     {
         ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
-        // Trust all proxies and networks (required for Azure)
-        KnownNetworks = { },
-        KnownProxies = { }
-    };
-    app.UseForwardedHeaders(forwardedHeadersOptions);
+    });
 }
 
 if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
