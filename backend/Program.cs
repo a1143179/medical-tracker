@@ -5,6 +5,7 @@ using Serilog;
 using Backend.Services;
 using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +35,14 @@ builder.Services.AddAuthentication();
 // Google OAuth
 var googleClientId = builder.Configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
 var googleClientSecret = builder.Configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+
+// Log Google OAuth config at startup
+var oauthLogger = LoggerFactory.Create(logging => logging.AddConsole()).CreateLogger("Startup");
+oauthLogger.LogInformation("Google OAuth config - ClientId: {HasClientId}, ClientSecret: {HasClientSecret}, Environment: {Environment}", 
+    !string.IsNullOrEmpty(googleClientId), 
+    !string.IsNullOrEmpty(googleClientSecret), 
+    builder.Environment.EnvironmentName);
+
 if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
 {
     builder.Services.AddAuthentication(options =>
@@ -61,13 +70,27 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.SaveTokens = true;
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
+        
+        // Fix redirect URI for production
         if (!builder.Environment.IsDevelopment())
         {
             options.Events.OnRedirectToAuthorizationEndpoint = context =>
             {
                 var request = context.HttpContext.Request;
                 var host = request.Host.Value ?? "localhost";
-                context.RedirectUri = $"https://{host}/api/auth/callback";
+                
+                // Force HTTPS for Azure
+                if (host.Contains("azurewebsites.net") || host.Contains("medicaltracker"))
+                {
+                    context.RedirectUri = "https://medicaltracker.azurewebsites.net/api/auth/callback";
+                }
+                else
+                {
+                    context.RedirectUri = $"https://{host}/api/auth/callback";
+                }
+                
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
                 return Task.CompletedTask;
             };
         }
@@ -263,6 +286,16 @@ app.Use(async (context, next) =>
     }
     await next();
 });
+
+// Add forwarded headers for Azure App Service
+if (!app.Environment.IsDevelopment())
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    });
+}
+
 app.Use(async (context, next) =>
 {
     var correlationCookie = context.Request.Cookies[".AspNetCore.Correlation.Google"];

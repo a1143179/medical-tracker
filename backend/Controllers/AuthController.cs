@@ -96,48 +96,8 @@ public class AuthController : ControllerBase
 
         try
         {
-            // For testing: manually redirect to Google OAuth
-            var redirectUri = properties.RedirectUri;
-            
-            _logger.LogInformation("Initial redirectUri from properties: {RedirectUri}", redirectUri);
-            _logger.LogInformation("Environment: {Environment}, IsDevelopment: {IsDevelopment}", _environment.EnvironmentName, _environment.IsDevelopment());
-            
-            // Force full URL for production (bypass environment detection issues)
-            var request = HttpContext.Request;
-            var host = request.Host.Value ?? "localhost";
-            var scheme = request.Scheme;
-            
-            if (host.Contains("azurewebsites.net") || host.Contains("medicaltracker"))
-            {
-                // Production - force HTTPS
-                redirectUri = $"https://medicaltracker.azurewebsites.net/api/auth/callback";
-                _logger.LogInformation("Production detected by hostname, using forced redirectUri: {RedirectUri}", redirectUri);
-            }
-            else if (!_environment.IsDevelopment())
-            {
-                // Production - use HTTPS
-                redirectUri = $"https://{host}/api/auth/callback";
-                _logger.LogInformation("Production redirectUri constructed: {RedirectUri}", redirectUri);
-            }
-            else
-            {
-                // Local development - use localhost:55555
-                redirectUri = $"http://localhost:55555/api/auth/callback";
-                _logger.LogInformation("Development mode, using localhost:55555 redirectUri: {RedirectUri}", redirectUri);
-            }
-            
-            var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
-                $"client_id={Uri.EscapeDataString(googleClientId)}&" +
-                $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                $"response_type=code&" +
-                $"scope={Uri.EscapeDataString("openid email profile")}&" +
-                $"state={Uri.EscapeDataString(properties.Items["correlationId"])}";
-            
-            _logger.LogInformation("Final Google OAuth URL: {Url}", googleOAuthUrl);
-            return Redirect(googleOAuthUrl);
-            
-            // Original code (commented out for testing):
-            // return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            _logger.LogInformation("Calling Challenge() with GoogleDefaults.AuthenticationScheme");
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
         catch (Exception ex)
         {
