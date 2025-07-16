@@ -96,31 +96,7 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
         options.CorrelationCookie.HttpOnly = true;
         options.CorrelationCookie.IsEssential = true;
-        
-        // Fix redirect URI for production
-        if (!builder.Environment.IsDevelopment())
-        {
-            options.Events.OnRedirectToAuthorizationEndpoint = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
-                var request = context.HttpContext.Request;
-                var host = request.Host.Value ?? "localhost";
                 
-                // Force HTTPS for Azure
-                if (host.Contains("azurewebsites.net") || host.Contains("medicaltracker"))
-                {
-                    context.RedirectUri = "https://medicaltracker.azurewebsites.net/api/auth/callback";
-                }
-                else
-                {
-                    context.RedirectUri = $"https://{host}/api/auth/callback";
-                }
-                
-                logger.LogInformation("AFTER Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
-                return Task.CompletedTask;
-            };
-        }
         options.Events.OnRemoteFailure = context =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
