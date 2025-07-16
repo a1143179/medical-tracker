@@ -82,42 +82,8 @@ public class AuthController : ControllerBase
             properties.RedirectUri = redirectUri;
         }
 
-        try
-        {
-            // Manual Google OAuth redirect
-            string redirectUri;
-            if (_environment.IsDevelopment()) {
-                redirectUri = "http://localhost:55555/api/auth/callback";
-            } else {
-                redirectUri = "https://medicaltracker.azurewebsites.net/api/auth/callback";
-            }
-            var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
-                $"client_id={Uri.EscapeDataString(googleClientId)}&" +
-                $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
-                $"response_type=code&" +
-                $"scope={Uri.EscapeDataString("openid email profile")}&" +
-                $"state={Uri.EscapeDataString(properties.Items["correlationId"])}";
-            return Redirect(googleOAuthUrl);
-        }
-        catch (Exception ex)
-        {
-            // Return a proper HTML error page for browser requests
-            if (Request.Headers["Accept"].ToString().Contains("text/html"))
-            {
-                return Content($@"
-                    <html>
-                        <head><title>OAuth Error</title></head>
-                        <body>
-                            <h1>Google OAuth Error</h1>
-                            <p>Failed to initiate Google OAuth authentication.</p>
-                            <p>Error: {ex.Message}</p>
-                            <p><a href='/login'>Back to Login</a></p>
-                        </body>
-                    </html>", "text/html");
-            }
-            
-            return BadRequest(new { message = "Failed to initiate Google OAuth authentication", error = ex.Message });
-        }
+        // Use the authentication middleware to challenge Google OAuth
+        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
     [HttpGet("callback")]

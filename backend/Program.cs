@@ -65,14 +65,23 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
     })
     .AddCookie("Cookies", options =>
     {
-        options.Events.OnRedirectToLogin = context => { context.Response.StatusCode = 401; return Task.CompletedTask; };
-        options.Cookie.Name = "MedicalTracker.OAuth.State";
+        options.Events.OnRedirectToLogin = context => {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning("OnRedirectToLogin triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        };
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
         options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SameSite = SameSiteMode.None;
         options.Cookie.MaxAge = TimeSpan.FromHours(1);
-        options.Events.OnRedirectToAccessDenied = context => { context.Response.StatusCode = 403; return Task.CompletedTask; };
+        options.Events.OnRedirectToAccessDenied = context => {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning("OnRedirectToAccessDenied triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
+            context.Response.StatusCode = 403;
+            return Task.CompletedTask;
+        };
     })
     .AddGoogle(options =>
     {
@@ -80,8 +89,11 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/api/auth/callback";
         options.SaveTokens = true;
+        // Ensure correlation cookie is set correctly for local development
+        options.CorrelationCookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.None
+            : CookieSecurePolicy.Always;
         options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-        options.CorrelationCookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
         options.CorrelationCookie.HttpOnly = true;
         options.CorrelationCookie.IsEssential = true;
         
