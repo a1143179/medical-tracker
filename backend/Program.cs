@@ -211,6 +211,17 @@ else
 
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment())
+{
+    var forwardedHeadersOptions = new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+        KnownNetworks = { },
+        KnownProxies = { }
+    };
+    app.UseForwardedHeaders(forwardedHeadersOptions);
+}
+
 // Logging
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 startupLogger.LogInformation("Application starting up. Environment: {Environment}", app.Environment.EnvironmentName);
@@ -227,18 +238,6 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-}
-
-// Add forwarded headers for Azure App Service BEFORE other middleware
-if (!app.Environment.IsDevelopment())
-{
-    var forwardedHeadersOptions = new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
-        KnownNetworks = { },
-        KnownProxies = { }
-    };
-    app.UseForwardedHeaders(forwardedHeadersOptions);
 }
 
 if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
