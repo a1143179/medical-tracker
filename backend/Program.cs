@@ -173,19 +173,6 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             context.HandleResponse();
             return;
         };
-        if (!builder.Environment.IsDevelopment())
-        {
-            options.Events.OnRedirectToAuthorizationEndpoint = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
-                // Replace only the first occurrence of 'http:' with 'https:' in the redirect_uri parameter
-                var googleUrl = context.RedirectUri.Replace("http:", "https:");
-                context.Response.Redirect(googleUrl);
-                logger.LogInformation("FORCED Google OAuth redirect to: {GoogleUrl}", googleUrl);
-                return Task.CompletedTask;
-            };
-        }
     });
 }
 else
@@ -245,10 +232,13 @@ if (app.Environment.IsDevelopment())
 // Add forwarded headers for Azure App Service BEFORE other middleware
 if (!app.Environment.IsDevelopment())
 {
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    var forwardedHeadersOptions = new ForwardedHeadersOptions
     {
         ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
-    });
+        KnownNetworks = { },
+        KnownProxies = { }
+    };
+    app.UseForwardedHeaders(forwardedHeadersOptions);
 }
 
 if (!app.Environment.IsDevelopment() && Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID") == null)
