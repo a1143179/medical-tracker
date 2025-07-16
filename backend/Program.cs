@@ -179,8 +179,8 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
-                // Replace 'http://' with 'https://' in the redirect_uri parameter for production
-                var googleUrl = context.RedirectUri.Replace("http://", "https://");
+                // Replace 'http%3A%2F%2F' with 'https%3A%2F%2F' in the redirect_uri parameter for production
+                var googleUrl = context.RedirectUri.Replace("http%3A%2F%2F", "https%3A%2F%2F");
                 context.Response.Redirect(googleUrl);
                 logger.LogInformation("FORCED Google OAuth redirect to: {GoogleUrl}", googleUrl);
                 return Task.CompletedTask;
