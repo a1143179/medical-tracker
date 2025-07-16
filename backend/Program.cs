@@ -173,6 +173,19 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             context.HandleResponse();
             return;
         };
+        if (!builder.Environment.IsDevelopment())
+        {
+            options.Events.OnRedirectToAuthorizationEndpoint = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
+                // Replace 'http://' with 'https://' in the redirect_uri parameter for production
+                var googleUrl = context.RedirectUri.Replace("http://", "https://");
+                context.Response.Redirect(googleUrl);
+                logger.LogInformation("FORCED Google OAuth redirect to: {GoogleUrl}", googleUrl);
+                return Task.CompletedTask;
+            };
+        }
     });
 }
 else
