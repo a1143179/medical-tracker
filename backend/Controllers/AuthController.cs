@@ -35,22 +35,12 @@ public class AuthController : ControllerBase
     [HttpGet("login")]
     public IActionResult Login(string returnUrl = "/", bool rememberMe = false)
     {
-        _logger.LogInformation("/api/auth/login hit with returnUrl={ReturnUrl}, rememberMe={RememberMe}", returnUrl, rememberMe);
         // Check if Google OAuth is configured
         var googleClientId = _configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         var googleClientSecret = _configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
         
-        _logger.LogInformation("Google OAuth configuration check - ClientId: {HasClientId}, ClientSecret: {HasClientSecret}, Environment: {Environment}", 
-            !string.IsNullOrEmpty(googleClientId), 
-            !string.IsNullOrEmpty(googleClientSecret), 
-            _environment.EnvironmentName);
-        
         if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
         {
-            _logger.LogError("Google OAuth is not configured. ClientId: {HasClientId}, ClientSecret: {HasClientSecret}", 
-                !string.IsNullOrEmpty(googleClientId), 
-                !string.IsNullOrEmpty(googleClientSecret));
-            
             // Return a proper HTML error page for browser requests
             if (Request.Headers["Accept"].ToString().Contains("text/html"))
             {
@@ -92,17 +82,25 @@ public class AuthController : ControllerBase
             properties.RedirectUri = redirectUri;
         }
 
-        _logger.LogInformation("Starting Google OAuth challenge with redirect URI: {RedirectUri}", properties.RedirectUri);
-
         try
         {
-            _logger.LogInformation("Calling Challenge() with GoogleDefaults.AuthenticationScheme");
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            // Manual Google OAuth redirect
+            string redirectUri;
+            if (_environment.IsDevelopment()) {
+                redirectUri = "http://localhost:55555/api/auth/callback";
+            } else {
+                redirectUri = "https://medicaltracker.azurewebsites.net/api/auth/callback";
+            }
+            var googleOAuthUrl = $"https://accounts.google.com/o/oauth2/v2/auth?" +
+                $"client_id={Uri.EscapeDataString(googleClientId)}&" +
+                $"redirect_uri={Uri.EscapeDataString(redirectUri)}&" +
+                $"response_type=code&" +
+                $"scope={Uri.EscapeDataString("openid email profile")}&" +
+                $"state={Uri.EscapeDataString(properties.Items["correlationId"])}";
+            return Redirect(googleOAuthUrl);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to initiate Google OAuth challenge");
-            
             // Return a proper HTML error page for browser requests
             if (Request.Headers["Accept"].ToString().Contains("text/html"))
             {
@@ -125,12 +123,10 @@ public class AuthController : ControllerBase
     [HttpGet("callback")]
     public async Task<IActionResult> Callback()
     {
-        _logger.LogInformation("OAuth callback hit");
         // Authenticate the user
         var authenticateResult = await HttpContext.AuthenticateAsync();
         if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
         {
-            _logger.LogWarning("OAuth authentication failed or principal is null");
             // Handle failed authentication
             return Redirect("/login?error=oauth_failed");
         }
@@ -147,11 +143,8 @@ public class AuthController : ControllerBase
         if (nameClaim != null)
             name = nameClaim.Value;
 
-        _logger.LogInformation("OAuth callback claims: email={Email}, name={Name}", email, name);
-
         if (string.IsNullOrEmpty(email))
         {
-            _logger.LogWarning("OAuth callback missing email claim");
             return Redirect("/login?error=missing_email");
         }
 
@@ -159,19 +152,13 @@ public class AuthController : ControllerBase
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
         {
-            _logger.LogInformation("Creating new user: {Email}, {Name}", email, name);
             user = new User { Email = email ?? string.Empty, Name = name ?? string.Empty };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
         }
-        else
-        {
-            _logger.LogInformation("Found existing user: {Email}, {Name}", user.Email, user.Name);
-        }
 
         // Generate JWT
         var jwt = _jwtService.GenerateToken(user, false);
-        _logger.LogInformation("Generated JWT for user: {Email}", user.Email);
 
         // Set JWT as cookie
         Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
@@ -181,10 +168,8 @@ public class AuthController : ControllerBase
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
-        _logger.LogInformation("Set JWT cookie for user: {Email}", user.Email);
 
         // Redirect to frontend (e.g., dashboard)
-        _logger.LogInformation("Redirecting user {Email} to /", user.Email);
         return Redirect("/");
     }
 
@@ -229,22 +214,5 @@ public class AuthController : ControllerBase
         };
 
         return Ok(userDto);
-    }
-
-    [HttpGet("test")]
-    public IActionResult Test()
-    {
-        var googleClientId = _configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
-        var googleClientSecret = _configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
-        _logger.LogInformation("googleClientId={gci}", googleClientId);
-        return Ok(new 
-        { 
-            hasClientId = !string.IsNullOrEmpty(googleClientId),
-            hasClientSecret = !string.IsNullOrEmpty(googleClientSecret),
-            isAuthenticated = User.Identity?.IsAuthenticated ?? false,
-            userAgent = Request.Headers["User-Agent"].ToString(),
-            cookies = Request.Cookies.Keys.ToList(),
-            environmentName = _environment.EnvironmentName
-        });
     }
 } 
