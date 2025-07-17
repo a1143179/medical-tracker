@@ -222,31 +222,6 @@ else
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    var forwardedHeadersOptions = new ForwardedHeadersOptions
-    {
-        ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
-    };
-    forwardedHeadersOptions.KnownNetworks.Clear();
-    forwardedHeadersOptions.KnownProxies.Clear();
-    app.UseForwardedHeaders(forwardedHeadersOptions);
-    // Add logging for forwarded headers
-    app.Use(async (context, next) =>
-    {
-        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        var proto = context.Request.Headers["X-Forwarded-Proto"].ToString();
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].ToString();
-        logger.LogInformation("Forwarded Headers: X-Forwarded-Proto={Proto}, X-Forwarded-For={ForwardedFor}, Scheme={Scheme}", proto, forwardedFor, context.Request.Scheme);
-        await next();
-    });
-}
-
-// Logging
-var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-startupLogger.LogInformation("Application starting up. Environment: {Environment}", app.Environment.EnvironmentName);
-
-// DB Migrations
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
