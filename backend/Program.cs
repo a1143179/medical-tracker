@@ -100,12 +100,10 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
         options.Events.OnRemoteFailure = context =>
         {
             var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            var headers = context.Request.Headers.Select(h => $"{h.Key}: {h.Value}").ToList();
-            var userAgent = context.Request.Headers["User-Agent"].ToString();
-            var accept = context.Request.Headers["Accept"].ToString();
-            var xRequestedWith = context.Request.Headers["X-Requested-With"].ToString();
-            var referer = context.Request.Headers["Referer"].ToString();
-            logger.LogError("OAuth remote failure: {Error}, Referer: {Referer}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", context.Failure?.Message, referer, xRequestedWith, string.Join(" | ", headers));
+            var host = context.Request.Host.HasValue ? context.Request.Host.Value : "unknown";
+            var scheme = context.Request.Scheme;
+            var redirectUri = context.Request.Query["redirect_uri"].ToString();
+            logger.LogWarning("OAuth remote failure. Host: {Host}, Scheme: {Scheme}, RedirectUri: {RedirectUri}", host, scheme, redirectUri);
             context.HttpContext.Session.Clear();
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
