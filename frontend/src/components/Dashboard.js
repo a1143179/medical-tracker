@@ -564,6 +564,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 spellCheck: 'false',
                 pattern: '[0-9]*[.,]?[0-9]*'
               }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
             />
             <TextField
               fullWidth
@@ -642,6 +647,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 autoCapitalize: 'off',
                 spellCheck: 'false',
                 pattern: '[0-9]*[.,]?[0-9]*'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
               }}
             />
             <TextField
