@@ -105,7 +105,7 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             var accept = context.Request.Headers["Accept"].ToString();
             var xRequestedWith = context.Request.Headers["X-Requested-With"].ToString();
             var referer = context.Request.Headers["Referer"].ToString();
-            logger.LogError("OAuth remote failure: {Error}, Referer: {Referer}, User-Agent: {UserAgent}, Accept: {Accept}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", context.Failure?.Message, referer, userAgent, accept, xRequestedWith, string.Join(" | ", headers));
+            logger.LogError("OAuth remote failure: {Error}, Referer: {Referer}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", context.Failure?.Message, referer, xRequestedWith, string.Join(" | ", headers));
             context.HttpContext.Session.Clear();
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
