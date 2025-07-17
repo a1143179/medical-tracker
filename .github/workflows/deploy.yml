@@ -3,8 +3,6 @@ name: Deploy Medical Tracker to Azure
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
 
 env:
   AZURE_WEBAPP_NAME: medicaltracker
