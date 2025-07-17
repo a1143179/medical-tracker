@@ -246,7 +246,6 @@ if (!app.Environment.IsDevelopment())
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
 startupLogger.LogInformation("Application starting up. Environment: {Environment}", app.Environment.EnvironmentName);
 
-// DB Migrations
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
