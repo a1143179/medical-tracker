@@ -548,14 +548,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label={t('medicalLevelLabel')}
+              label="医疗数据 (Medical Data)"
               type="text"
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
               onChange={handleInputChange}
               required
               margin="normal"
-              helperText={t('enterBloodSugarReading')}
               inputProps={{
                 inputMode: 'decimal',
                 autoComplete: 'off',
@@ -627,14 +626,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label={t('medicalLevelLabel')}
+              label="医疗数据 (Medical Data)"
               type="text"
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
               onChange={handleInputChange}
               required
               margin="normal"
-              helperText={t('enterBloodSugarReading')}
               inputProps={{
                 inputMode: 'decimal',
                 autoComplete: 'off',
@@ -974,15 +972,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         />
                         <TextField
                           fullWidth
-                          label={t('medicalLevelLabel')}
-                          type="number"
-                          step="0.1"
+                          label="医疗数据 (Medical Data)"
+                          type="text"
                           name="level"
                           value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
                           onChange={handleInputChange}
                           required
                           margin="normal"
-                          helperText={t('enterBloodSugarReading')}
                           inputProps={{
                             inputMode: 'decimal',
                             autoComplete: 'off',
@@ -1053,15 +1049,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label={t('medicalLevelLabel')}
-              type="number"
-              step="0.1"
+              label="医疗数据 (Medical Data)"
+              type="text"
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
               onChange={handleInputChange}
               required
               margin="normal"
-              helperText={t('enterBloodSugarReading')}
               inputProps={{
                 inputMode: 'decimal',
                 autoComplete: 'off',
