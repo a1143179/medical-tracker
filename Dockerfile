@@ -1,16 +1,19 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY backend-publish/. .
-# 运行迁移
+COPY ["backend/backend.csproj", "backend/"]
+RUN dotnet restore "backend/backend.csproj"
+COPY . .
+WORKDIR /src/backend
 RUN dotnet tool install --global dotnet-ef
 ENV PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet ef database update --no-build --context AppDbContext
+RUN dotnet ef database update --context AppDbContext
+RUN dotnet publish "backend.csproj" -c Release -o /app/publish
 
-# Final runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-COPY --from=build /src/. .
+COPY --from=build /app/publish .
 COPY frontend/build ./wwwroot
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
