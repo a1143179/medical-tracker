@@ -7,7 +7,6 @@ COPY . .
 WORKDIR /src/backend
 RUN dotnet tool install --global dotnet-ef
 ENV PATH="$PATH:/root/.dotnet/tools"
-RUN dotnet ef database update --context AppDbContext
 RUN dotnet publish "backend.csproj" -c Release -o /app/publish
 
 # Runtime stage
