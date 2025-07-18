@@ -304,7 +304,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return current > previous ? <TrendingUpIcon color="error" /> : <TrendingDownIcon color="success" />;
   };
 
-  const chartData = records.slice(0, 20).reverse().map(record => ({
+  // Fix: Use all records for chartData, not just the first 20
+  const chartData = records.map(record => ({
     date: formatDateTime(record.measurementTime),
     level: record.level
   }));
@@ -452,21 +453,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               </LineChart>
             </ResponsiveContainer>
           </Paper>
-          <Paper elevation={3} sx={{ p: 1.5 }}>
-            <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-              <BarChartIcon color="primary" />
-              {t('recentReadings')}
-            </Typography>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={chartData.slice(-10)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" angle={-45} textAnchor="end" height={60} />
-                <YAxis domain={[0, 'dataMax + 2']} />
-                <RechartsTooltip />
-                <Bar dataKey="level" fill="#1976d2" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Paper>
+          {/* Removed the second chart (BarChart for recent readings) */}
           <Paper elevation={3} sx={{ p: 1.5 }}>
             <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
               <ShowChartIcon color="primary" />
@@ -549,7 +536,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             <TextField
               fullWidth
               label="医疗数据 (Medical Data)"
-              type="text"
+              type="number" // Fix: use type="number" for better mobile keyboard
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
               onChange={handleInputChange}
@@ -561,7 +548,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 autoCorrect: 'off',
                 autoCapitalize: 'off',
                 spellCheck: 'false',
-                pattern: '[0-9]*[.,]?[0-9]*'
+                pattern: '[0-9]*[.,]?[0-9]*',
+                step: 'any', // allow decimals
+                min: 0.1,
+                max: 1000
               }}
             />
             <TextField
@@ -884,19 +874,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
                               />
                             </LineChart>
-                          </Paper>
-                          <Paper elevation={3} sx={{ p: 2 }}>
-                            <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <BarChartIcon color="primary" />
-                              {t('recentReadings')}
-                            </Typography>
-                            <BarChart width={800} height={300} data={chartData.slice(-10)}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="date" />
-                              <YAxis domain={[0, 'dataMax + 2']} />
-                              <RechartsTooltip />
-                              <Bar dataKey="level" fill="#1976d2" />
-                            </BarChart>
                           </Paper>
                           <Paper elevation={3} sx={{ p: 2 }}>
                             <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
