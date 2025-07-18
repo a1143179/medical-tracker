@@ -125,6 +125,7 @@ export const LanguageProvider = ({ children }) => {
       // Dashboard Cards
       latestReading: 'Latest Reading',
       averageLevel: 'Average Level',
+      averageValue: 'Average Value',
       totalRecords: 'Total Records',
       noData: 'No data',
       basedOnReadings: 'Based on {count} readings',
@@ -159,6 +160,7 @@ export const LanguageProvider = ({ children }) => {
       dateTimeLabel: 'Date & Time',
       bloodSugarLevelLabel: 'Medical Value (mmol/L)',
       enterBloodSugarReading: 'Enter your medical value',
+      medicalRecordLabel: 'Medical Record',
       notesLabel: 'Notes',
       optionalNotes: 'Optional notes about this reading',
       cancel: 'Cancel',
@@ -251,6 +253,7 @@ export const LanguageProvider = ({ children }) => {
       // Dashboard Cards
       latestReading: '最新读数',
       averageLevel: '平均水平',
+      averageValue: '平均值',
       totalRecords: '总记录数',
       noData: '无数据',
       basedOnReadings: '基于 {count} 次读数',
@@ -285,6 +288,7 @@ export const LanguageProvider = ({ children }) => {
       dateTimeLabel: '日期和时间',
       bloodSugarLevelLabel: 'Medical Value (mmol/L)',
       enterBloodSugarReading: '输入您的血糖读数',
+      medicalRecordLabel: '医疗记录',
       notesLabel: '备注',
       optionalNotes: '关于此读数的可选备注',
       cancel: '取消',
