@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
@@ -403,7 +403,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
                 {averageLevel} mmol/L
               </Typography>
-              {/* 3. Add High/Low label for average */}
+            </Box>
+            {/* Move High/Low label below mmol/L */}
+            <Box sx={{ mt: 1 }}>
               <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
             </Box>
             <Typography variant="caption" color="text.secondary">
@@ -513,8 +515,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   );
 
   // Mobile Add Record Content
-  const MobileAddRecord = () => {
+  const MobileAddRecord = memo(() => {
     const medicalRecordLabel = t('medicalRecordLabel');
+    // Always provide a string value for the input
+    const levelValue = typeof currentRecord.level === 'number' ? String(currentRecord.level) : (currentRecord.level ?? '');
     return (
       <Box sx={{ p: 0 }}>
         <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
@@ -545,7 +549,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={medicalRecordLabel}
                 type="number"
                 name="level"
-                value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
+                value={levelValue}
                 onChange={handleInputChange}
                 required
                 margin="normal"
@@ -594,8 +598,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  };
-
+  });
+  // eslint-disable-next-line react/display-name
+  
   // Mobile Edit Record Content (reuse add form, but with different button text)
   const MobileEditRecord = () => (
     <Box sx={{ p: 0 }}>
@@ -748,7 +753,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
                             {averageLevel} mmol/L
                           </Typography>
-                          {/* 3. Add High/Low label for average */}
+                        </Box>
+                        {/* Move High/Low label below mmol/L */}
+                        <Box sx={{ mt: 1 }}>
                           <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
                         </Box>
                         <Typography variant="caption" color="text.secondary">
