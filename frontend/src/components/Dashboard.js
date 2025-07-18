@@ -36,7 +36,6 @@ import {
   TrendingUp as TrendingUpIcon,
   TrendingDown as TrendingDownIcon,
   Remove as RemoveIcon,
-  BarChart as BarChartIcon,
   ShowChart as ShowChartIcon
 } from '@mui/icons-material';
 import {
@@ -46,9 +45,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar
+  ResponsiveContainer
 } from 'recharts';
 
 // Backend API URL
