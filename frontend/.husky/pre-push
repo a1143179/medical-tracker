@@ -1,0 +1,1 @@
+#!/bin/sh\nnpx eslint src --ext .js,.jsx --max-warnings=0\nRESULT=True\nif [  -ne 0 ]; then\n  exit 1\nfi\n
