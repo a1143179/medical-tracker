@@ -53,7 +53,7 @@ const API_URL = '/api/records';
 
 function Dashboard({ mobilePage, onMobilePageChange }) {
   const { user } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
