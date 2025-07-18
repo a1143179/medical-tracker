@@ -403,7 +403,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
                 {averageLevel} mmol/L
               </Typography>
-              {/* 3. Add High/Low label for average */}
+            </Box>
+            {/* Move High/Low label below mmol/L */}
+            <Box sx={{ mt: 1 }}>
               <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
             </Box>
             <Typography variant="caption" color="text.secondary">
@@ -751,7 +753,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
                             {averageLevel} mmol/L
                           </Typography>
-                          {/* 3. Add High/Low label for average */}
+                        </Box>
+                        {/* Move High/Low label below mmol/L */}
+                        <Box sx={{ mt: 1 }}>
                           <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
                         </Box>
                         <Typography variant="caption" color="text.secondary">
