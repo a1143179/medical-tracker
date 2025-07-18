@@ -53,7 +53,7 @@ const API_URL = '/api/records';
 
 function Dashboard({ mobilePage, onMobilePageChange }) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -301,8 +301,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return current > previous ? <TrendingUpIcon color="error" /> : <TrendingDownIcon color="success" />;
   };
 
-  // Fix: Use all records for chartData, not just the first 20
-  const chartData = records.map(record => ({
+  // 1. Sort chartData from oldest to newest for X axis
+  const sortedRecords = [...records].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
+  const chartData = sortedRecords.map(record => ({
     date: formatDateTime(record.measurementTime),
     level: record.level
   }));
@@ -363,6 +364,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const latestRecord = records[0];
 
+  // 2. Get average status for High/Low label
+  const averageStatus = getBloodSugarStatus(Number(averageLevel));
+
   // Mobile Dashboard Content
   const MobileDashboard = () => (
     <Box sx={{ p: 0 }}>
@@ -389,15 +393,19 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             )}
           </CardContent>
         </Card>
-        
         <Card elevation={3}>
           <CardContent sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              {t('averageLevel')}
+              {/* 2. Change label to Average Value */}
+              {t('averageValue')}
             </Typography>
-            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {averageLevel} mmol/L
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+                {averageLevel} mmol/L
+              </Typography>
+              {/* 3. Add High/Low label for average */}
+              <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
+            </Box>
             <Typography variant="caption" color="text.secondary">
               {t('basedOnReadings', { count: records.length })}
             </Typography>
@@ -505,85 +513,88 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   );
 
   // Mobile Add Record Content
-  const MobileAddRecord = () => (
-    <Box sx={{ p: 0 }}>
-      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
-        {t('addNewRecord')}
-      </Typography>
-      <Box sx={{ px: 1 }}>
-        <Paper elevation={3} sx={{ p: 2 }}>
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label={t('dateTimeLabel')}
-              type="datetime-local"
-              name="measurementTime"
-              value={currentRecord.measurementTime}
-              onChange={handleInputChange}
-              required
-              margin="normal"
-              InputLabelProps={{ shrink: true }}
-              inputProps={{
-                step: 60, // 1 minute steps
-                autoComplete: 'off',
-                inputMode: 'numeric',
-                pattern: '[0-9T:-]*',
-              }}
-            />
-            <TextField
-              fullWidth
-              label="医疗数据 (Medical Data)"
-              type="number" // Fix: use type="number" for better mobile keyboard
-              name="level"
-              value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
-              onChange={handleInputChange}
-              required
-              margin="normal"
-              inputProps={{
-                inputMode: 'decimal',
-                autoComplete: 'off',
-                autoCorrect: 'off',
-                autoCapitalize: 'off',
-                spellCheck: 'false',
-                pattern: '[0-9]*[.,]?[0-9]*',
-                step: 'any', // allow decimals
-                min: 0.1,
-                max: 1000
-              }}
-            />
-            <TextField
-              fullWidth
-              label={t('notesLabel')}
-              name="notes"
-              value={currentRecord.notes}
-              onChange={handleInputChange}
-              margin="normal"
-              multiline
-              rows={3}
-              helperText={t('optionalNotes')}
-            />
-            <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
-              <Button 
-                variant="outlined" 
+  const MobileAddRecord = () => {
+    const medicalRecordLabel = t('medicalRecordLabel');
+    return (
+      <Box sx={{ p: 0 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
+          {t('addNewRecord')}
+        </Typography>
+        <Box sx={{ px: 1 }}>
+          <Paper elevation={3} sx={{ p: 2 }}>
+            <Box component="form" onSubmit={handleSubmit}>
+              <TextField
                 fullWidth
-                onClick={() => handleMobilePageChange('dashboard')}
-              >
-                {t('cancel')}
-              </Button>
-              <Button 
-                type="submit" 
-                variant="contained" 
+                label={t('dateTimeLabel')}
+                type="datetime-local"
+                name="measurementTime"
+                value={currentRecord.measurementTime}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  step: 60, // 1 minute steps
+                  autoComplete: 'off',
+                  inputMode: 'numeric',
+                  pattern: '[0-9T:-]*',
+                }}
+              />
+              <TextField
                 fullWidth
-                data-testid="add-new-record-button"
-              >
-                {t('addRecordButton')}
-              </Button>
+                label={medicalRecordLabel}
+                type="number"
+                name="level"
+                value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false',
+                  pattern: '[0-9]*[.,]?[0-9]*',
+                  step: 'any',
+                  min: 0.1,
+                  max: 1000
+                }}
+              />
+              <TextField
+                fullWidth
+                label={t('notesLabel')}
+                name="notes"
+                value={currentRecord.notes}
+                onChange={handleInputChange}
+                margin="normal"
+                multiline
+                rows={3}
+                helperText={t('optionalNotes')}
+              />
+              <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
+                <Button 
+                  variant="outlined" 
+                  fullWidth
+                  onClick={() => handleMobilePageChange('dashboard')}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  fullWidth
+                  data-testid="add-new-record-button"
+                >
+                  {t('addRecordButton')}
+                </Button>
+              </Box>
             </Box>
-          </Box>
-        </Paper>
+          </Paper>
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  };
 
   // Mobile Edit Record Content (reuse add form, but with different button text)
   const MobileEditRecord = () => (
@@ -613,8 +624,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label="医疗数据 (Medical Data)"
-              type="text"
+              label={t('medicalRecordLabel')}
+              type="number"
               name="level"
               value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
               onChange={handleInputChange}
@@ -730,11 +741,16 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                     <Card elevation={3} sx={{ flex: 1 }}>
                       <CardContent sx={{ p: 2 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {t('averageLevel')}
+                          {/* 2. Change label to Average Value */}
+                          {t('averageValue')}
                         </Typography>
-                        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                          {averageLevel} mmol/L
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                            {averageLevel} mmol/L
+                          </Typography>
+                          {/* 3. Add High/Low label for average */}
+                          <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
+                        </Box>
                         <Typography variant="caption" color="text.secondary">
                           {t('basedOnReadings', { count: records.length })}
                         </Typography>
@@ -946,8 +962,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         />
                         <TextField
                           fullWidth
-                          label="医疗数据 (Medical Data)"
-                          type="text"
+                          label={t('medicalRecordLabel')}
+                          type="number"
                           name="level"
                           value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
                           onChange={handleInputChange}
