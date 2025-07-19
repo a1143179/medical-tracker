@@ -92,15 +92,42 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return language === 'zh' ? valueType.nameZh : valueType.name;
   }, [language]);
   
-  // Function to get selected value type
-  const getSelectedValueType = useCallback(() => {
+  // Memoize selected value type to prevent unnecessary re-renders
+  const selectedValueTypeData = useMemo(() => {
     return valueTypes.find(vt => vt.id === selectedValueType);
   }, [valueTypes, selectedValueType]);
   
-  // Function to filter records by selected value type
-  const getFilteredRecords = useCallback(() => {
+  // Function to get selected value type
+  const getSelectedValueType = useCallback(() => {
+    return selectedValueTypeData;
+  }, [selectedValueTypeData]);
+  
+  // Memoize filtered records to prevent unnecessary re-renders
+  const filteredRecords = useMemo(() => {
     return records.filter(record => record.valueTypeId === selectedValueType);
   }, [records, selectedValueType]);
+  
+  // Function to filter records by selected value type
+  const getFilteredRecords = useCallback(() => {
+    return filteredRecords;
+  }, [filteredRecords]);
+  
+  // Memoize average value calculation
+  const averageValue = useMemo(() => {
+    return filteredRecords.length > 0 
+      ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
+      : 0;
+  }, [filteredRecords]);
+  
+  // Memoize latest record
+  const latestRecord = useMemo(() => {
+    return filteredRecords[0];
+  }, [filteredRecords]);
+  
+  // Memoize average status
+  const averageStatus = useMemo(() => {
+    return getValueStatus(Number(averageValue));
+  }, [averageValue, getValueStatus]);
   
   // Function to get status based on value type and value
   const getValueStatus = useCallback((value) => {
@@ -376,9 +403,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return current > previous ? <TrendingUpIcon color="error" /> : <TrendingDownIcon color="success" />;
   };
 
-  // Get filtered records for the selected value type
-  const filteredRecords = getFilteredRecords();
-  
   // 1. Sort chartData from oldest to newest for X axis
   const sortedRecords = [...filteredRecords].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
   const chartData = sortedRecords.map(record => ({
@@ -435,15 +459,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   };
 
   const chart24HourData = calculate24HourData();
-
-  const averageValue = filteredRecords.length > 0 
-    ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
-    : 0;
-
-  const latestRecord = filteredRecords[0];
-
-  // 2. Get average status for High/Low label
-  const averageStatus = getBloodSugarStatus(Number(averageValue));
 
   // Mobile Dashboard Content
   const MobileDashboard = () => (
@@ -988,7 +1003,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         <TablePagination
                           rowsPerPageOptions={[5, 10, 25, 50]}
                           component="div"
-                          count={filteredRecords.length}
+                                                      count={filteredRecords.length}
                           rowsPerPage={rowsPerPage}
                           page={page}
                           onPageChange={handleChangePage}
