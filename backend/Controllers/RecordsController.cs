@@ -43,14 +43,14 @@ public class RecordsController : ControllerBase
             return Unauthorized();
         }
 
-        if (dto.Level <= 0)
+        if (dto.Value <= 0)
         {
-            return BadRequest("Blood sugar level must be greater than 0");
+            return BadRequest("Blood sugar value must be greater than 0");
         }
 
         var record = new Record
         {
-            Level = dto.Level,
+            Value = dto.Value,
             MeasurementTime = dto.MeasurementTime,
             Notes = dto.Notes,
             UserId = id
@@ -71,9 +71,9 @@ public class RecordsController : ControllerBase
             return Unauthorized();
         }
 
-        if (dto.Level <= 0)
+        if (dto.Value <= 0)
         {
-            return BadRequest("Blood sugar level must be greater than 0");
+            return BadRequest("Blood sugar value must be greater than 0");
         }
 
         var record = await _context.Records
@@ -84,7 +84,7 @@ public class RecordsController : ControllerBase
             return NotFound();
         }
 
-        record.Level = dto.Level;
+        record.Value = dto.Value;
         record.MeasurementTime = dto.MeasurementTime;
         record.Notes = dto.Notes;
 

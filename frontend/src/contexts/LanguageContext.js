@@ -124,7 +124,6 @@ export const LanguageProvider = ({ children }) => {
       
       // Dashboard Cards
       latestReading: 'Latest Reading',
-      averageLevel: 'Average Level',
       averageValue: 'Average Value',
       totalRecords: 'Total Records',
       noData: 'No data',
@@ -135,7 +134,7 @@ export const LanguageProvider = ({ children }) => {
       bloodSugarRecords: 'Medical Records',
       addRecord: 'Add New Record',
       dateTime: 'Date & Time',
-      bloodSugarLevel: 'Medical Value (mmol/L)',
+      bloodSugarValue: 'Medical Value (mmol/L)',
       status: 'Status',
       trend: 'Trend',
       notes: 'Notes',
@@ -158,7 +157,7 @@ export const LanguageProvider = ({ children }) => {
       addNewBloodSugarRecord: 'Add New Medical Record',
       editBloodSugarRecord: 'Edit Medical Record',
       dateTimeLabel: 'Date & Time',
-      bloodSugarLevelLabel: 'Medical Value (mmol/L)',
+      bloodSugarValueLabel: 'Medical Value (mmol/L)',
       enterBloodSugarReading: 'Enter your medical value',
       medicalRecordLabel: 'Medical Record',
       notesLabel: 'Notes',
@@ -214,7 +213,7 @@ export const LanguageProvider = ({ children }) => {
       registrationSuccessful: 'Registration successful! You can now log in.',
       sending: 'Sending...',
       yourDataIsSecure: 'Your data is secure and private. We only store your basic account information.',
-      appDescription: 'Track your blood sugar levels and monitor your health with our comprehensive dashboard.',
+      appDescription: 'Track your medical values and monitor your health with our comprehensive dashboard.',
       appInitials: 'BS',
       
       resetsAt: 'Resets: {time}',
@@ -252,7 +251,6 @@ export const LanguageProvider = ({ children }) => {
       
       // Dashboard Cards
       latestReading: '最新读数',
-      averageLevel: '平均水平',
       averageValue: '平均值',
       totalRecords: '总记录数',
       noData: '无数据',
@@ -263,7 +261,7 @@ export const LanguageProvider = ({ children }) => {
       bloodSugarRecords: 'Medical Records',
       addRecord: '添加新记录',
       dateTime: '日期和时间',
-      bloodSugarLevel: 'Medical Value (mmol/L)',
+      bloodSugarValue: 'Medical Value (mmol/L)',
       status: '状态',
       trend: '趋势',
       notes: '备注',
@@ -283,11 +281,11 @@ export const LanguageProvider = ({ children }) => {
       addRecordsForCharts: '添加一些血糖记录以查看图表和分析',
       
       // Add/Edit Record
-      addNewBloodSugarRecord: '添加新血糖记录',
-      editBloodSugarRecord: '编辑血糖记录',
+      addNewBloodSugarRecord: '添加新医疗记录',
+      editBloodSugarRecord: '编辑医疗记录',
       dateTimeLabel: '日期和时间',
-      bloodSugarLevelLabel: 'Medical Value (mmol/L)',
-      enterBloodSugarReading: '输入您的血糖读数',
+      bloodSugarValueLabel: 'Medical Value (mmol/L)',
+      enterBloodSugarReading: '输入您的医疗数值',
       medicalRecordLabel: '医疗记录',
       notesLabel: '备注',
       optionalNotes: '关于此读数的可选备注',
@@ -340,7 +338,7 @@ export const LanguageProvider = ({ children }) => {
       registrationSuccessful: '注册成功！您现在可以登录了。',
       sending: '发送中...',
       yourDataIsSecure: '您的数据是安全且私密的。我们只存储您的基本账户信息。',
-      appDescription: '追踪您的血糖水平并通过我们的综合仪表板监控您的健康状况。',
+      appDescription: '追踪您的医疗数值并通过我们的综合仪表板监控您的健康状况。',
       appInitials: '血糖',
       
       resetsAt: '重置时间: {time}',

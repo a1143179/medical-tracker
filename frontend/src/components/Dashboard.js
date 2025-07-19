@@ -70,7 +70,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       const minutes = String(now.getMinutes()).padStart(2, '0');
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     })(), 
-    level: '', 
+    value: '', 
     notes: ''
   });
   const [openDialog, setOpenDialog] = useState(false);
@@ -123,9 +123,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       }
 
       // Client-side validation
-      const level = parseFloat(currentRecord.level);
-      if (isNaN(level) || level < 0.1 || level > 1000) {
-        showMessage('Blood sugar level must be between 0.1 and 1000 mmol/L', 'error');
+      const value = parseFloat(currentRecord.value);
+      if (isNaN(value) || value < 0.1 || value > 1000) {
+        showMessage('Blood sugar value must be between 0.1 and 1000 mmol/L', 'error');
         return;
       }
 
@@ -140,7 +140,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             ...currentRecord, 
-            level: level,
+            value: value,
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -159,7 +159,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             ...currentRecord, 
-            level: level, 
+            value: value, 
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -196,7 +196,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setCurrentRecord({ 
       ...record, 
       measurementTime: localDateTime,
-      level: record.level !== undefined && record.level !== null ? String(record.level) : ''
+      value: record.value !== undefined && record.value !== null ? String(record.value) : ''
     });
     setOpenDialog(true);
     if (isMobile) {
@@ -231,7 +231,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setCurrentRecord({ 
       id: null, 
       measurementTime: localDateTime, 
-      level: '', 
+      value: '', 
       notes: ''
     });
     setOpenDialog(false);
@@ -256,10 +256,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
 
 
-  const getBloodSugarStatus = (level) => {
-    if (level < 3.9) return { label: t('low'), color: 'error' };
-    if (level > 10.0) return { label: t('high'), color: 'error' };
-    if (level > 7.8) return { label: t('elevated'), color: 'warning' };
+  const getBloodSugarStatus = (value) => {
+    if (value < 3.9) return { label: t('low'), color: 'error' };
+    if (value > 10.0) return { label: t('high'), color: 'error' };
+    if (value > 7.8) return { label: t('elevated'), color: 'warning' };
     return { label: t('normal'), color: 'success' };
   };
 
@@ -292,8 +292,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const getTrendIcon = (currentIndex) => {
     if (currentIndex === records.length - 1) return <RemoveIcon />;
-    const current = records[currentIndex].level;
-    const previous = records[currentIndex + 1].level;
+    const current = records[currentIndex].value;
+    const previous = records[currentIndex + 1].value;
     return current > previous ? <TrendingUpIcon color="error" /> : <TrendingDownIcon color="success" />;
   };
 
@@ -301,7 +301,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const sortedRecords = [...records].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
   const chartData = sortedRecords.map(record => ({
     date: formatDateTime(record.measurementTime),
-    level: record.level
+    value: record.value
   }));
 
   // Calculate 24-hour average blood sugar pattern (across all records)
@@ -318,7 +318,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     records.forEach(record => {
       const recordDate = new Date(record.measurementTime);
       const hour = recordDate.getHours();
-      hourlyGroups[hour].push(record.level);
+      hourlyGroups[hour].push(record.value);
     });
     
     // Calculate average for each hour
@@ -326,26 +326,26 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     for (let hour = 0; hour < 24; hour++) {
       const readings = hourlyGroups[hour];
       if (readings.length > 0) {
-        const average = readings.reduce((sum, level) => sum + level, 0) / readings.length;
+        const average = readings.reduce((sum, value) => sum + value, 0) / readings.length;
         hourlyAverages.push({
           hour: hour,
-          level: parseFloat(average.toFixed(1)),
+          value: parseFloat(average.toFixed(1)),
           count: readings.length
         });
       } else {
         // No readings for this hour
         hourlyAverages.push({
           hour: hour,
-          level: null,
-          count: 0
-        });
+                  value: null,
+        count: 0
+      });
       }
     }
     
     // Add hour 24 (same as hour 0 for display purposes)
     hourlyAverages.push({
       hour: 24,
-      level: hourlyAverages[0]?.level || null,
+      value: hourlyAverages[0]?.value || null,
       count: hourlyAverages[0]?.count || 0
     });
     
@@ -354,14 +354,14 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const chart24HourData = calculate24HourData();
 
-  const averageLevel = records.length > 0 
-    ? (records.reduce((sum, record) => sum + record.level, 0) / records.length).toFixed(1)
+  const averageValue = records.length > 0 
+    ? (records.reduce((sum, record) => sum + record.value, 0) / records.length).toFixed(1)
     : 0;
 
   const latestRecord = records[0];
 
   // 2. Get average status for High/Low label
-  const averageStatus = getBloodSugarStatus(Number(averageLevel));
+  const averageStatus = getBloodSugarStatus(Number(averageValue));
 
   // Mobile Dashboard Content
   const MobileDashboard = () => (
@@ -373,7 +373,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               {t('latestReading')}
             </Typography>
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {latestRecord ? `${latestRecord.level} mmol/L` : t('noData')}
+              {latestRecord ? `${latestRecord.value} mmol/L` : t('noData')}
             </Typography>
             {latestRecord && (
               <>
@@ -381,8 +381,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   {formatDateTime(latestRecord.measurementTime)}
                 </Typography>
                 <Chip 
-                  label={getBloodSugarStatus(latestRecord.level).label}
-                  color={getBloodSugarStatus(latestRecord.level).color}
+                  label={getBloodSugarStatus(latestRecord.value).label}
+                  color={getBloodSugarStatus(latestRecord.value).color}
                   size="medium"
                 />
               </>
@@ -397,7 +397,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                {averageLevel} mmol/L
+                {averageValue} mmol/L
               </Typography>
             </Box>
             {/* Move High/Low label below mmol/L */}
@@ -448,7 +448,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <RechartsTooltip />
                 <Line 
                   type="monotone" 
-                  dataKey="level" 
+                  dataKey="value" 
                   stroke="#1976d2" 
                   strokeWidth={3}
                   dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
@@ -475,7 +475,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <YAxis domain={[0, 'dataMax + 2']} />
                 <RechartsTooltip 
                   formatter={(value, name, props) => {
-                    if (name === 'level') {
+                    if (name === 'value') {
                       return [
                         value ? `${value} mmol/L` : t('noData'), 
                         t('average')
@@ -487,7 +487,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 />
                 <Line 
                   type="monotone" 
-                  dataKey="level" 
+                  dataKey="value" 
                   stroke="#ff6b35" 
                   strokeWidth={3}
                   dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
@@ -514,7 +514,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const MobileAddRecord = memo(() => {
     const medicalRecordLabel = t('medicalRecordLabel');
     // Always provide a string value for the input to prevent focus loss
-    const levelValue = currentRecord.level ?? '';
+    const valueValue = currentRecord.value ?? '';
     return (
       <Box sx={{ p: 0 }}>
         <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
@@ -544,8 +544,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 fullWidth
                 label={medicalRecordLabel}
                 type="text"
-                name="level"
-                value={levelValue}
+                name="value"
+                value={valueValue}
                 onChange={handleInputChange}
                 required
                 margin="normal"
@@ -624,8 +624,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               fullWidth
               label={t('medicalRecordLabel')}
               type="text"
-              name="level"
-              value={currentRecord.level ?? ''}
+              name="value"
+              value={currentRecord.value ?? ''}
               onChange={handleInputChange}
               required
               margin="normal"
@@ -719,7 +719,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           {t('latestReading')}
                         </Typography>
                         <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                          {latestRecord ? `${latestRecord.level} mmol/L` : t('noData')}
+                          {latestRecord ? `${latestRecord.value} mmol/L` : t('noData')}
                         </Typography>
                         {latestRecord && (
                           <>
@@ -727,8 +727,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               {formatDateTime(latestRecord.measurementTime)}
                             </Typography>
                             <Chip 
-                              label={getBloodSugarStatus(latestRecord.level).label}
-                              color={getBloodSugarStatus(latestRecord.level).color}
+                              label={getBloodSugarStatus(latestRecord.value).label}
+                              color={getBloodSugarStatus(latestRecord.value).color}
                               size="small"
                               sx={{ mt: 0.5 }}
                             />
@@ -744,7 +744,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                            {averageLevel} mmol/L
+                            {averageValue} mmol/L
                           </Typography>
                         </Box>
                         {/* Move High/Low label below mmol/L */}
@@ -796,7 +796,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           <TableHead>
                             <TableRow sx={{ backgroundColor: 'grey.50' }}>
                               <TableCell><strong>{t('dateTime')}</strong></TableCell>
-                              <TableCell><strong>{t('bloodSugarLevel')}</strong></TableCell>
+                              <TableCell><strong>{t('bloodSugarValue')}</strong></TableCell>
                               <TableCell><strong>{t('status')}</strong></TableCell>
                               <TableCell><strong>{t('trend')}</strong></TableCell>
                               <TableCell><strong>{t('notes')}</strong></TableCell>
@@ -807,7 +807,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             {records
                               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                               .map((record, index) => {
-                              const status = getBloodSugarStatus(record.level);
+                              const status = getBloodSugarStatus(record.value);
                               const actualIndex = page * rowsPerPage + index;
                               return (
                                 <TableRow key={record.id} hover>
@@ -816,7 +816,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                      {record.level}
+                                      {record.value}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
@@ -881,7 +881,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               <RechartsTooltip />
                               <Line 
                                 type="monotone" 
-                                dataKey="level" 
+                                dataKey="value" 
                                 stroke="#1976d2" 
                                 strokeWidth={3}
                                 dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
@@ -905,7 +905,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               <YAxis domain={[0, 'dataMax + 2']} />
                               <RechartsTooltip 
                                 formatter={(value, name, props) => {
-                                  if (name === 'level') {
+                                  if (name === 'value') {
                                     return [
                                       value ? `${value} mmol/L` : t('noData'), 
                                       t('average')
@@ -917,7 +917,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               />
                               <Line 
                                 type="monotone" 
-                                dataKey="level" 
+                                dataKey="value" 
                                 stroke="#ff6b35" 
                                 strokeWidth={3}
                                 dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
@@ -964,8 +964,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           fullWidth
                           label={t('medicalRecordLabel')}
                           type="text"
-                          name="level"
-                          value={currentRecord.level ?? ''}
+                          name="value"
+                          value={currentRecord.value ?? ''}
                           onChange={handleInputChange}
                           required
                           margin="normal"
@@ -1041,8 +1041,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               fullWidth
               label="医疗数据 (Medical Data)"
               type="text"
-              name="level"
-              value={currentRecord.level ?? ''}
+              name="value"
+              value={currentRecord.value ?? ''}
               onChange={handleInputChange}
               required
               margin="normal"

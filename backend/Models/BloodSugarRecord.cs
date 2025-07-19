@@ -3,7 +3,7 @@ namespace Backend.Models;
 public class Record
 {
     public int Id { get; set; }
-    public double Level { get; set; }
+    public decimal Value { get; set; }
     public DateTime MeasurementTime { get; set; }
     public string? Notes { get; set; }
     public int UserId { get; set; }
