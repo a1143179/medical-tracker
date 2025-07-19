@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
@@ -519,7 +519,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   // Mobile Add Record Content
   const MobileAddRecord = memo(() => {
-    const medicalRecordLabel = t('medicalRecordLabel');
+    // Memoize the label to prevent unnecessary re-renders
+    const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
     // Always provide a string value for the input to prevent focus loss
     const valueValue = currentRecord.value ?? '';
     return (
@@ -544,7 +545,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   step: 60, // 1 minute steps
                   autoComplete: 'off',
                   inputMode: 'numeric',
-                  pattern: '[0-9T:-]*',
                 }}
               />
               <TextField
@@ -562,7 +562,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   autoCorrect: 'off',
                   autoCapitalize: 'off',
                   spellCheck: 'false',
-                  pattern: '[0-9]*[.,]?[0-9]*',
                 }}
               />
               <TextField
@@ -610,41 +609,39 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       <Box sx={{ px: 1 }}>
         <Paper elevation={3} sx={{ p: 2 }}>
           <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label={t('dateTimeLabel')}
-              type="datetime-local"
-              name="measurementTime"
-              value={currentRecord.measurementTime}
-              onChange={handleInputChange}
-              required
-              margin="normal"
-              InputLabelProps={{ shrink: true }}
-              inputProps={{
-                step: 60,
-                autoComplete: 'off',
-                inputMode: 'numeric',
-                pattern: '[0-9T:-]*',
-              }}
-            />
-            <TextField
-              fullWidth
-              label={t('medicalRecordLabel')}
-              type="text"
-              name="value"
-              value={currentRecord.value ?? ''}
-              onChange={handleInputChange}
-              required
-              margin="normal"
-              inputProps={{
-                inputMode: 'decimal',
-                autoComplete: 'off',
-                autoCorrect: 'off',
-                autoCapitalize: 'off',
-                spellCheck: 'false',
-                pattern: '[0-9]*[.,]?[0-9]*'
-              }}
-            />
+                          <TextField
+                fullWidth
+                label={t('dateTimeLabel')}
+                type="datetime-local"
+                name="measurementTime"
+                value={currentRecord.measurementTime}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  step: 60,
+                  autoComplete: 'off',
+                  inputMode: 'numeric',
+                }}
+              />
+              <TextField
+                fullWidth
+                label={t('medicalRecordLabel')}
+                type="text"
+                name="value"
+                value={currentRecord.value ?? ''}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false',
+                }}
+              />
             <TextField
               fullWidth
               label={t('notesLabel')}
