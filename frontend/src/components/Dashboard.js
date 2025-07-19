@@ -93,7 +93,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         return;
       }
       
-      const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`);
+      const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`, {
+        credentials: 'include'
+      });
       const data = await response.json();
       setRecords(data.sort((a, b) => new Date(b.measurementTime) - new Date(a.measurementTime)));
     } catch (error) {
@@ -138,6 +140,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         const response = await fetch(`${API_URL}/${currentRecord.id}?userId=${encodeURIComponent(userId)}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value,
@@ -157,6 +160,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value, 
@@ -213,7 +217,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           return;
         }
         
-        await fetch(`${API_URL}/${id}?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
+        await fetch(`${API_URL}/${id}?userId=${encodeURIComponent(userId)}`, { 
+          method: 'DELETE',
+          credentials: 'include'
+        });
         showMessage(t('recordDeletedSuccessfully'), 'success');
         fetchRecords();
       } catch (error) {

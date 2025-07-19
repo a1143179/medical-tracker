@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Backend.Data;
 using Backend.Models;
 using Backend.DTOs;
+using Backend.Services;
 
 namespace Backend.Controllers;
 
@@ -11,23 +12,47 @@ namespace Backend.Controllers;
 public class RecordsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IJwtService _jwtService;
 
-    public RecordsController(AppDbContext context)
+    public RecordsController(AppDbContext context, IJwtService jwtService)
     {
         _context = context;
+        _jwtService = jwtService;
+    }
+
+    private int? GetUserId()
+    {
+        // Get JWT token from Authorization header or cookie
+        var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") 
+                   ?? Request.Cookies["MedicalTracker.Auth.JWT"];
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
+
+        var email = _jwtService.GetUserEmailFromToken(token);
+        if (string.IsNullOrEmpty(email))
+        {
+            return null;
+        }
+
+        // Get user from database by email
+        var user = _context.Users.FirstOrDefault(u => u.Email == email);
+        return user?.Id;
     }
 
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var userId = HttpContext.Session.GetString("UserId");
-        if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
+        var userId = GetUserId();
+        if (!userId.HasValue)
         {
             return Unauthorized();
         }
 
         var records = await _context.Records
-            .Where(r => r.UserId == id)
+            .Where(r => r.UserId == userId.Value)
             .OrderByDescending(r => r.MeasurementTime)
             .ToListAsync();
 
@@ -37,8 +62,8 @@ public class RecordsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] CreateRecordDto dto)
     {
-        var userId = HttpContext.Session.GetString("UserId");
-        if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var id))
+        var userId = GetUserId();
+        if (!userId.HasValue)
         {
             return Unauthorized();
         }
@@ -53,7 +78,7 @@ public class RecordsController : ControllerBase
             Value = dto.Value,
             MeasurementTime = dto.MeasurementTime,
             Notes = dto.Notes,
-            UserId = id
+            UserId = userId.Value
         };
 
         _context.Records.Add(record);
@@ -65,8 +90,8 @@ public class RecordsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(int id, [FromBody] CreateRecordDto dto)
     {
-        var userId = HttpContext.Session.GetString("UserId");
-        if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var userIdInt))
+        var userId = GetUserId();
+        if (!userId.HasValue)
         {
             return Unauthorized();
         }
@@ -77,7 +102,7 @@ public class RecordsController : ControllerBase
         }
 
         var record = await _context.Records
-            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userIdInt);
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId.Value);
 
         if (record == null)
         {
@@ -96,14 +121,14 @@ public class RecordsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var userId = HttpContext.Session.GetString("UserId");
-        if (string.IsNullOrEmpty(userId) || !int.TryParse(userId, out var userIdInt))
+        var userId = GetUserId();
+        if (!userId.HasValue)
         {
             return Unauthorized();
         }
 
         var record = await _context.Records
-            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userIdInt);
+            .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId.Value);
 
         if (record == null)
         {

@@ -31,18 +31,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
-// Session
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-    options.Cookie.MaxAge = TimeSpan.FromDays(30);
-    options.Cookie.Name = "MedicalTracker.Session.Data";
-    options.Cookie.SameSite = SameSiteMode.Lax;
-});
+
 
 // Google OAuth
 var googleClientId = builder.Configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
@@ -104,7 +93,6 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
             var scheme = context.Request.Scheme;
             var redirectUri = context.Request.Query["redirect_uri"].ToString();
             logger.LogWarning("OAuth remote failure. Host: {Host}, Scheme: {Scheme}, RedirectUri: {RedirectUri}", host, scheme, redirectUri);
-            context.HttpContext.Session.Clear();
             context.Response.Redirect("/login?error=oauth_failed");
             context.HandleResponse();
             return Task.CompletedTask;
@@ -145,8 +133,6 @@ if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientS
                     await userService.SaveChangesAsync();
                     logger.LogInformation("Updated existing user: {Email}", email);
                 }
-                
-                context.HttpContext.Session.SetString("UserId", user.Id.ToString());
                 
                 // Get remember me setting from OAuth properties
                 var rememberMe = context.Properties?.Items.ContainsKey("rememberMe") == true 
@@ -269,33 +255,10 @@ if (!app.Environment.IsDevelopment())
 
 app.Use(async (context, next) =>
 {
-    try { await next(); }
-    catch (System.Security.Cryptography.CryptographicException ex) when (ex.Message.Contains("key") && ex.Message.Contains("not found"))
-    {
-        context.Response.Cookies.Delete("MedicalTracker.Session.Data");
-        context.Response.Cookies.Delete(".AspNetCore.Antiforgery");
-        context.Response.Redirect("/login");
-        return;
-    }
-});
-
-app.Use(async (context, next) =>
-{
-    var oldSessionCookie = context.Request.Cookies[".AspNetCore.Session"];
-    if (!string.IsNullOrEmpty(oldSessionCookie))
-        context.Response.Cookies.Delete(".AspNetCore.Session");
-    await next();
-});
-
-app.UseSession();
-
-app.Use(async (context, next) =>
-{
     if (context.Request.Path.StartsWithSegments("/api/auth"))
     {
-        await context.Session.LoadAsync();
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        logger.LogInformation("OAuth request: {Path}, Method: {Method}, HasSession: {HasSession}, QueryString: {QueryString}", context.Request.Path, context.Request.Method, context.Session.IsAvailable, context.Request.QueryString);
+        logger.LogInformation("OAuth request: {Path}, Method: {Method}, QueryString: {QueryString}", context.Request.Path, context.Request.Method, context.Request.QueryString);
         if (context.Request.Path.StartsWithSegments("/api/auth/callback"))
         {
             var state = context.Request.Query["state"].ToString();
