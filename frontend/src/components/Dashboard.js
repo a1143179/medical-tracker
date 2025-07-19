@@ -641,7 +641,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                       horizontal: 'left',
                     },
                     disableScrollLock: true,
-                    keepMounted: false
+                    keepMounted: false,
+                    getContentAnchorEl: null
                   }}
                 >
                   {valueTypes.map((valueType) => (
@@ -753,7 +754,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                     horizontal: 'left',
                   },
                   disableScrollLock: true,
-                  keepMounted: false
+                  keepMounted: false,
+                  getContentAnchorEl: null
                 }}
               >
                 {valueTypes.map((valueType) => (
@@ -889,8 +891,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             MenuProps={{
                               PaperProps: {
                                 sx: { 
-                                  maxHeight: 200,
-                                  mt: 1
+                                  maxHeight: 200
                                 }
                               },
                               anchorOrigin: {
@@ -902,7 +903,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 horizontal: 'left',
                               },
                               disableScrollLock: true,
-                              keepMounted: false
+                              keepMounted: false,
+                              getContentAnchorEl: null
                             }}
                           >
                             {valueTypes.map((valueType) => (
