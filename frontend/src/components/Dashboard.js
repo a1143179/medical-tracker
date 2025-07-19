@@ -109,12 +109,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // For 'level', always store as string to preserve decimals as typed
-    if (name === 'level') {
+    // Always store as string to preserve decimals as typed and prevent focus loss
     setCurrentRecord({ ...currentRecord, [name]: value });
-    } else {
-      setCurrentRecord({ ...currentRecord, [name]: value });
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -517,8 +513,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   // Mobile Add Record Content
   const MobileAddRecord = memo(() => {
     const medicalRecordLabel = t('medicalRecordLabel');
-    // Always provide a string value for the input
-    const levelValue = typeof currentRecord.level === 'number' ? String(currentRecord.level) : (currentRecord.level ?? '');
+    // Always provide a string value for the input to prevent focus loss
+    const levelValue = currentRecord.level ?? '';
     return (
       <Box sx={{ p: 0 }}>
         <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
@@ -547,7 +543,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               <TextField
                 fullWidth
                 label={medicalRecordLabel}
-                type="number"
+                type="text"
                 name="level"
                 value={levelValue}
                 onChange={handleInputChange}
@@ -560,9 +556,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   autoCapitalize: 'off',
                   spellCheck: 'false',
                   pattern: '[0-9]*[.,]?[0-9]*',
-                  step: 'any',
-                  min: 0.1,
-                  max: 1000
                 }}
               />
               <TextField
@@ -630,9 +623,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             <TextField
               fullWidth
               label={t('medicalRecordLabel')}
-              type="number"
+              type="text"
               name="level"
-              value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
+              value={currentRecord.level ?? ''}
               onChange={handleInputChange}
               required
               margin="normal"
@@ -970,9 +963,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         <TextField
                           fullWidth
                           label={t('medicalRecordLabel')}
-                          type="number"
+                          type="text"
                           name="level"
-                          value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
+                          value={currentRecord.level ?? ''}
                           onChange={handleInputChange}
                           required
                           margin="normal"
@@ -1049,7 +1042,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               label="医疗数据 (Medical Data)"
               type="text"
               name="level"
-              value={currentRecord.level === undefined || currentRecord.level === null ? '' : String(currentRecord.level)}
+              value={currentRecord.level ?? ''}
               onChange={handleInputChange}
               required
               margin="normal"
