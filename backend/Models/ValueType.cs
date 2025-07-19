@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Backend.Models;
 
@@ -15,6 +16,7 @@ public class MedicalValueType
     
     public bool IsActive { get; set; } = true;
     
-    // Navigation property
+    // Navigation property - ignore in JSON to prevent circular reference
+    [JsonIgnore]
     public ICollection<Record> Records { get; set; } = new List<Record>();
 } 
