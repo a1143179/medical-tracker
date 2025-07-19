@@ -564,11 +564,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           <Paper elevation={3} sx={{ p: 2 }}>
             <Box component="form" onSubmit={handleSubmit}>
               <FormControl fullWidth margin="normal">
-                <InputLabel id="mobile-value-type-label">Medical Value Type</InputLabel>
+                <InputLabel id="mobile-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
                 <Select
                   labelId="mobile-value-type-label"
                   value={currentRecord.valueTypeId}
-                  label="Medical Value Type"
+                  label={t('medicalValueTypeLabel')}
                   name="valueTypeId"
                   onChange={handleInputChange}
                 >
@@ -659,11 +659,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         <Paper elevation={3} sx={{ p: 2 }}>
                     <Box component="form" onSubmit={handleSubmit}>
             <FormControl fullWidth margin="normal">
-              <InputLabel id="mobile-edit-value-type-label">Medical Value Type</InputLabel>
+              <InputLabel id="mobile-edit-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
               <Select
                 labelId="mobile-edit-value-type-label"
                 value={currentRecord.valueTypeId}
-                label="Medical Value Type"
+                label={t('medicalValueTypeLabel')}
                 name="valueTypeId"
                 onChange={handleInputChange}
               >
@@ -785,11 +785,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
                     {/* Medical Value Type Selector */}
                     <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-                      <InputLabel id="value-type-label">Medical Value Type</InputLabel>
+                      <InputLabel id="value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
                       <Select
                         labelId="value-type-label"
                         value={selectedValueType}
-                        label="Medical Value Type"
+                        label={t('medicalValueTypeLabel')}
                         onChange={(e) => setSelectedValueType(e.target.value)}
                       >
                         {valueTypes.map((valueType) => (
