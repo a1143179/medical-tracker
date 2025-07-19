@@ -165,6 +165,7 @@ export const LanguageProvider = ({ children }) => {
       cancel: 'Cancel',
       update: 'Update',
       addRecordButton: 'Add New Record',
+      medicalValueTypeLabel: 'Medical Value Type',
       
       // Status Labels
       low: 'Low',
@@ -292,6 +293,7 @@ export const LanguageProvider = ({ children }) => {
       cancel: '取消',
       update: '更新',
       addRecordButton: '添加新记录',
+      medicalValueTypeLabel: '医疗数据类型',
       
       // Status Labels
       low: '低',

@@ -57,7 +57,7 @@ const API_URL = '/api/records';
 
 function Dashboard({ mobilePage, onMobilePageChange }) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -85,6 +85,54 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [activeTab, setActiveTab] = useState(0);
   const [message, setMessage] = useState({ text: '', severity: 'info', show: false });
+  
+  // Function to get localized value type name
+  const getLocalizedValueTypeName = useCallback((valueType) => {
+    if (!valueType) return '';
+    return language === 'zh' ? valueType.nameZh : valueType.name;
+  }, [language]);
+  
+  // Function to get selected value type
+  const getSelectedValueType = useCallback(() => {
+    return valueTypes.find(vt => vt.id === selectedValueType);
+  }, [valueTypes, selectedValueType]);
+  
+  // Function to filter records by selected value type
+  const getFilteredRecords = useCallback(() => {
+    return records.filter(record => record.valueTypeId === selectedValueType);
+  }, [records, selectedValueType]);
+  
+  // Function to get status based on value type and value
+  const getValueStatus = useCallback((value) => {
+    const valueType = getSelectedValueType();
+    if (!valueType) return { label: t('normal'), color: 'success' };
+    
+    // Different status logic for different value types
+    switch (valueType.id) {
+      case 1: // Blood Sugar
+        if (value < 3.9) return { label: t('low'), color: 'error' };
+        if (value > 10.0) return { label: t('high'), color: 'error' };
+        if (value > 7.8) return { label: t('elevated'), color: 'warning' };
+        return { label: t('normal'), color: 'success' };
+      case 2: // Blood Pressure (systolic)
+        if (value < 90) return { label: t('low'), color: 'error' };
+        if (value > 140) return { label: t('high'), color: 'error' };
+        if (value > 120) return { label: t('elevated'), color: 'warning' };
+        return { label: t('normal'), color: 'success' };
+      case 3: // Body Fat %
+        if (value < 10) return { label: t('low'), color: 'error' };
+        if (value > 30) return { label: t('high'), color: 'error' };
+        if (value > 25) return { label: t('elevated'), color: 'warning' };
+        return { label: t('normal'), color: 'success' };
+      case 4: // Weight
+        // For weight, we'll use a simple range based on typical adult weights
+        if (value < 40) return { label: t('low'), color: 'error' };
+        if (value > 120) return { label: t('high'), color: 'error' };
+        return { label: t('normal'), color: 'success' };
+      default:
+        return { label: t('normal'), color: 'success' };
+    }
+  }, [getSelectedValueType, t]);
   
   const showMessage = useCallback((text, severity = 'info') => {
     setMessage({ text, severity, show: true });
@@ -289,11 +337,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
 
 
+  // Keep the old function for backward compatibility, but use the new one
   const getBloodSugarStatus = (value) => {
-    if (value < 3.9) return { label: t('low'), color: 'error' };
-    if (value > 10.0) return { label: t('high'), color: 'error' };
-    if (value > 7.8) return { label: t('elevated'), color: 'warning' };
-    return { label: t('normal'), color: 'success' };
+    return getValueStatus(value);
   };
 
   const formatDateTime = (dateTime) => {
@@ -330,16 +376,19 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return current > previous ? <TrendingUpIcon color="error" /> : <TrendingDownIcon color="success" />;
   };
 
+  // Get filtered records for the selected value type
+  const filteredRecords = getFilteredRecords();
+  
   // 1. Sort chartData from oldest to newest for X axis
-  const sortedRecords = [...records].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
+  const sortedRecords = [...filteredRecords].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
   const chartData = sortedRecords.map(record => ({
     date: formatDateTime(record.measurementTime),
     value: record.value
   }));
 
-  // Calculate 24-hour average blood sugar pattern (across all records)
+  // Calculate 24-hour average pattern (across filtered records)
   const calculate24HourData = () => {
-    if (records.length === 0) return [];
+    if (filteredRecords.length === 0) return [];
     
     // Group all records by hour of day (0-23)
     const hourlyGroups = {};
@@ -348,7 +397,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     }
     
     // Categorize all records by hour
-    records.forEach(record => {
+    filteredRecords.forEach(record => {
       const recordDate = new Date(record.measurementTime);
       const hour = recordDate.getHours();
       hourlyGroups[hour].push(record.value);
@@ -387,11 +436,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const chart24HourData = calculate24HourData();
 
-  const averageValue = records.length > 0 
-    ? (records.reduce((sum, record) => sum + record.value, 0) / records.length).toFixed(1)
+  const averageValue = filteredRecords.length > 0 
+    ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
     : 0;
 
-  const latestRecord = records[0];
+  const latestRecord = filteredRecords[0];
 
   // 2. Get average status for High/Low label
   const averageStatus = getBloodSugarStatus(Number(averageValue));
@@ -406,7 +455,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               {t('latestReading')}
             </Typography>
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {latestRecord ? `${latestRecord.value} mmol/L` : t('noData')}
+              {latestRecord ? `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData')}
             </Typography>
             {latestRecord && (
               <>
@@ -430,7 +479,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                {averageValue} mmol/L
+                {averageValue} {getSelectedValueType()?.unit || 'mmol/L'}
               </Typography>
             </Box>
             {/* Move High/Low label below mmol/L */}
@@ -438,7 +487,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
             </Box>
             <Typography variant="caption" color="text.secondary">
-              {t('basedOnReadings', { count: records.length })}
+              {t('basedOnReadings', { count: filteredRecords.length })}
             </Typography>
           </CardContent>
         </Card>
@@ -449,10 +498,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               {t('totalRecords')}
             </Typography>
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              {records.length}
+              {filteredRecords.length}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {t('bloodSugarMeasurements')}
+              {getLocalizedValueTypeName(getSelectedValueType()) || t('bloodSugarMeasurements')}
             </Typography>
           </CardContent>
         </Card>
@@ -466,7 +515,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
         {t('analytics')}
       </Typography>
-      {records.length > 0 ? (
+      {filteredRecords.length > 0 ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, px: 1 }}>
           <Paper elevation={3} sx={{ p: 1.5 }}>
             <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
@@ -510,7 +559,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   formatter={(value, name, props) => {
                     if (name === 'value') {
                       return [
-                        value ? `${value} mmol/L` : t('noData'), 
+                        value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
                         t('average')
                       ];
                     }
@@ -558,17 +607,17 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           <Paper elevation={3} sx={{ p: 2 }}>
             <Box component="form" onSubmit={handleSubmit}>
               <FormControl fullWidth margin="normal">
-                <InputLabel id="mobile-value-type-label">Medical Value Type</InputLabel>
+                <InputLabel id="mobile-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
                 <Select
                   labelId="mobile-value-type-label"
                   value={currentRecord.valueTypeId}
-                  label="Medical Value Type"
+                  label={t('medicalValueTypeLabel')}
                   name="valueTypeId"
                   onChange={handleInputChange}
                 >
                   {valueTypes.map((valueType) => (
                     <MenuItem key={valueType.id} value={valueType.id}>
-                      {valueType.name}
+                      {getLocalizedValueTypeName(valueType)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -653,17 +702,17 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         <Paper elevation={3} sx={{ p: 2 }}>
                     <Box component="form" onSubmit={handleSubmit}>
             <FormControl fullWidth margin="normal">
-              <InputLabel id="mobile-edit-value-type-label">Medical Value Type</InputLabel>
+              <InputLabel id="mobile-edit-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
               <Select
                 labelId="mobile-edit-value-type-label"
                 value={currentRecord.valueTypeId}
-                label="Medical Value Type"
+                label={t('medicalValueTypeLabel')}
                 name="valueTypeId"
                 onChange={handleInputChange}
               >
                 {valueTypes.map((valueType) => (
                   <MenuItem key={valueType.id} value={valueType.id}>
-                    {valueType.name}
+                    {getLocalizedValueTypeName(valueType)}
                   </MenuItem>
                 ))}
               </Select>
@@ -778,30 +827,36 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
                     {/* Medical Value Type Selector */}
-                    <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-                      <InputLabel id="value-type-label">Medical Value Type</InputLabel>
-                      <Select
-                        labelId="value-type-label"
-                        value={selectedValueType}
-                        label="Medical Value Type"
-                        onChange={(e) => setSelectedValueType(e.target.value)}
-                      >
-                        {valueTypes.map((valueType) => (
-                          <MenuItem key={valueType.id} value={valueType.id}>
-                            {valueType.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    <Card elevation={3} sx={{ flex: 1 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('medicalValueTypeLabel')}
+                        </Typography>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={selectedValueType}
+                            onChange={(e) => setSelectedValueType(e.target.value)}
+                            displayEmpty
+                            sx={{ mt: 1 }}
+                          >
+                            {valueTypes.map((valueType) => (
+                              <MenuItem key={valueType.id} value={valueType.id}>
+                                {getLocalizedValueTypeName(valueType)}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </CardContent>
+                    </Card>
                     
                     <Card elevation={3} sx={{ flex: 1 }}>
                       <CardContent sx={{ p: 2 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
                           {t('latestReading')}
                         </Typography>
-                        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                          {latestRecord ? `${latestRecord.value} mmol/L` : t('noData')}
-                        </Typography>
+                                    <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+              {latestRecord ? `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData')}
+            </Typography>
                         {latestRecord && (
                           <>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -825,7 +880,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                            {averageValue} mmol/L
+                            {averageValue} {getSelectedValueType()?.unit || 'mmol/L'}
                           </Typography>
                         </Box>
                         {/* Move High/Low label below mmol/L */}
@@ -833,7 +888,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           <Chip label={averageStatus.label} color={averageStatus.color} size="small" />
                         </Box>
                         <Typography variant="caption" color="text.secondary">
-                          {t('basedOnReadings', { count: records.length })}
+                          {t('basedOnReadings', { count: filteredRecords.length })}
                         </Typography>
                       </CardContent>
                     </Card>
@@ -843,10 +898,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           {t('totalRecords')}
                         </Typography>
                         <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                          {records.length}
+                          {filteredRecords.length}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {t('bloodSugarMeasurements')}
+                          {getLocalizedValueTypeName(getSelectedValueType()) || t('bloodSugarMeasurements')}
                         </Typography>
                       </CardContent>
                     </Card>
@@ -877,7 +932,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           <TableHead>
                             <TableRow sx={{ backgroundColor: 'grey.50' }}>
                               <TableCell><strong>{t('dateTime')}</strong></TableCell>
-                              <TableCell><strong>{t('bloodSugarValue')}</strong></TableCell>
+                              <TableCell><strong>{getLocalizedValueTypeName(getSelectedValueType()) || t('bloodSugarValue')}</strong></TableCell>
                               <TableCell><strong>{t('status')}</strong></TableCell>
                               <TableCell><strong>{t('trend')}</strong></TableCell>
                               <TableCell><strong>{t('notes')}</strong></TableCell>
@@ -885,7 +940,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             </TableRow>
                           </TableHead>
                           <TableBody data-testid="blood-sugar-records">
-                            {records
+                            {filteredRecords
                               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                               .map((record, index) => {
                               const status = getBloodSugarStatus(record.value);
@@ -897,7 +952,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                      {record.value}
+                                      {record.value} {getSelectedValueType()?.unit || 'mmol/L'}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
@@ -933,7 +988,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         <TablePagination
                           rowsPerPageOptions={[5, 10, 25, 50]}
                           component="div"
-                          count={records.length}
+                          count={filteredRecords.length}
                           rowsPerPage={rowsPerPage}
                           page={page}
                           onPageChange={handleChangePage}
@@ -948,7 +1003,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   {/* Tab Panel 1: Analytics */}
                   {activeTab === 1 && (
                     <Box sx={{ p: 2, width: '100%' }}>
-                      {records.length > 0 ? (
+                      {filteredRecords.length > 0 ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                           <Paper elevation={3} sx={{ p: 2 }}>
                             <Typography variant="body1" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -984,18 +1039,18 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 tickFormatter={(value) => `${value}:00`}
                               />
                               <YAxis domain={[0, 'dataMax + 2']} />
-                              <RechartsTooltip 
-                                formatter={(value, name, props) => {
-                                  if (name === 'value') {
-                                    return [
-                                      value ? `${value} mmol/L` : t('noData'), 
-                                      t('average')
-                                    ];
-                                  }
-                                  return [value, name];
-                                }}
-                                labelFormatter={(label) => `${label}:00`}
-                              />
+                                              <RechartsTooltip 
+                  formatter={(value, name, props) => {
+                    if (name === 'value') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                        t('average')
+                      ];
+                    }
+                    return [value, name];
+                  }}
+                  labelFormatter={(label) => `${label}:00`}
+                />
                               <Line 
                                 type="monotone" 
                                 dataKey="value" 

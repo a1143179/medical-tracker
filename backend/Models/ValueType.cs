@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Backend.Models;
 
@@ -8,13 +9,18 @@ public class MedicalValueType
     
     [Required]
     [MaxLength(50)]
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty; // English name
+    
+    [Required]
+    [MaxLength(50)]
+    public string NameZh { get; set; } = string.Empty; // Chinese name
     
     [MaxLength(20)]
     public string Unit { get; set; } = string.Empty;
     
     public bool IsActive { get; set; } = true;
     
-    // Navigation property
+    // Navigation property - ignore in JSON to prevent circular reference
+    [JsonIgnore]
     public ICollection<Record> Records { get; set; } = new List<Record>();
 } 
