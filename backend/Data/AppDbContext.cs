@@ -26,7 +26,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Record>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.Property(e => e.Level).IsRequired();
+            entity.Property(e => e.Value).IsRequired().HasColumnType("DECIMAL(10,2)");
             entity.Property(e => e.MeasurementTime).IsRequired();
             entity.HasOne(e => e.User)
                   .WithMany()
