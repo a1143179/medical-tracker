@@ -32,9 +32,9 @@ code {
   background: #a8a8a8;
 }
 
-/* Smooth transitions for better UX */
+/* Smooth transitions for better UX - exclude layout-affecting properties */
 * {
-  transition: all 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
 /* Remove focus outline for non-keyboard navigation */

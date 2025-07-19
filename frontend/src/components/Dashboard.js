@@ -639,7 +639,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                     transformOrigin: {
                       vertical: 'top',
                       horizontal: 'left',
-                    }
+                    },
+                    disableScrollLock: true,
+                    keepMounted: false
                   }}
                 >
                   {valueTypes.map((valueType) => (
@@ -749,7 +751,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   transformOrigin: {
                     vertical: 'top',
                     horizontal: 'left',
-                  }
+                  },
+                  disableScrollLock: true,
+                  keepMounted: false
                 }}
               >
                 {valueTypes.map((valueType) => (
@@ -850,7 +854,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       <Box sx={{ 
         flexGrow: 1, 
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         {isMobile ? (
           // Mobile Layout
@@ -863,10 +869,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         ) : (
           // Desktop Layout
           <Container maxWidth="lg" sx={{ py: 2 }}>
-            <Box sx={{ display: 'flex', minHeight: '80vh', height: '100%' }}>
+            <Box sx={{ display: 'flex', minHeight: '80vh', height: '100%', position: 'relative' }}>
               {/* Overview Panel */}
-              <Box sx={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', height: '100%', mr: 2 }}>
-                <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Box sx={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', height: '100%', mr: 2, position: 'relative' }}>
+                <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
                     {/* Medical Value Type Selector */}
                     <Card elevation={3} sx={{ flex: 1 }}>
@@ -894,7 +900,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               transformOrigin: {
                                 vertical: 'top',
                                 horizontal: 'left',
-                              }
+                              },
+                              disableScrollLock: true,
+                              keepMounted: false
                             }}
                           >
                             {valueTypes.map((valueType) => (
