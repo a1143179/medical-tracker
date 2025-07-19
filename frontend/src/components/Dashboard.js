@@ -461,6 +461,47 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const MobileDashboard = () => (
     <Box sx={{ p: 0 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, px: 1 }}>
+        {/* Medical Value Type Selector */}
+        <Card elevation={3}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {t('medicalValueTypeLabel')}
+            </Typography>
+            <FormControl fullWidth size="small">
+              <Select
+                value={selectedValueType}
+                onChange={(e) => setSelectedValueType(e.target.value)}
+                displayEmpty
+                sx={{ mt: 1 }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { 
+                      maxHeight: 200
+                    }
+                  },
+                  anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  },
+                  transformOrigin: {
+                    vertical: 'top',
+                    horizontal: 'left',
+                  },
+                  disableScrollLock: true,
+                  keepMounted: false,
+                  getContentAnchorEl: null
+                }}
+              >
+                {valueTypes.map((valueType) => (
+                  <MenuItem key={valueType.id} value={valueType.id}>
+                    {getLocalizedValueTypeName(valueType)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </CardContent>
+        </Card>
+        
         <Card elevation={3}>
           <CardContent sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
