@@ -107,10 +107,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return records.filter(record => record.valueTypeId === selectedValueType);
   }, [records, selectedValueType]);
   
-  // Function to filter records by selected value type
-  const getFilteredRecords = useCallback(() => {
-    return filteredRecords;
-  }, [filteredRecords]);
+
   
   // Memoize average value calculation
   const averageValue = useMemo(() => {
@@ -123,11 +120,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const latestRecord = useMemo(() => {
     return filteredRecords[0];
   }, [filteredRecords]);
-  
-  // Memoize average status
-  const averageStatus = useMemo(() => {
-    return getValueStatus(Number(averageValue));
-  }, [averageValue, getValueStatus]);
   
   // Function to get status based on value type and value
   const getValueStatus = useCallback((value) => {
@@ -160,6 +152,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         return { label: t('normal'), color: 'success' };
     }
   }, [getSelectedValueType, t]);
+  
+  // Memoize average status
+  const averageStatus = useMemo(() => {
+    return getValueStatus(Number(averageValue));
+  }, [averageValue, getValueStatus]);
   
   const showMessage = useCallback((text, severity = 'info') => {
     setMessage({ text, severity, show: true });
