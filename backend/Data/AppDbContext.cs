@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Record> Records { get; set; }
+    public DbSet<MedicalValueType> ValueTypes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,14 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Name).IsRequired();
         });
 
+        modelBuilder.Entity<MedicalValueType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Unit).HasMaxLength(20);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+        });
+
         modelBuilder.Entity<Record>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -32,6 +41,10 @@ public class AppDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.ValueType)
+                  .WithMany(v => v.Records)
+                  .HasForeignKey(e => e.ValueTypeId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
     }
 } 
