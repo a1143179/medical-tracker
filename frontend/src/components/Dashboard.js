@@ -626,6 +626,21 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   label={t('medicalValueTypeLabel')}
                   name="valueTypeId"
                   onChange={handleInputChange}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { 
+                        maxHeight: 200
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left',
+                    }
+                  }}
                 >
                   {valueTypes.map((valueType) => (
                     <MenuItem key={valueType.id} value={valueType.id}>
@@ -721,6 +736,21 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={t('medicalValueTypeLabel')}
                 name="valueTypeId"
                 onChange={handleInputChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { 
+                      maxHeight: 200
+                    }
+                  },
+                  anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  },
+                  transformOrigin: {
+                    vertical: 'top',
+                    horizontal: 'left',
+                  }
+                }}
               >
                 {valueTypes.map((valueType) => (
                   <MenuItem key={valueType.id} value={valueType.id}>
@@ -850,6 +880,22 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             onChange={(e) => setSelectedValueType(e.target.value)}
                             displayEmpty
                             sx={{ mt: 1 }}
+                            MenuProps={{
+                              PaperProps: {
+                                sx: { 
+                                  maxHeight: 200,
+                                  mt: 1
+                                }
+                              },
+                              anchorOrigin: {
+                                vertical: 'bottom',
+                                horizontal: 'left',
+                              },
+                              transformOrigin: {
+                                vertical: 'top',
+                                horizontal: 'left',
+                              }
+                            }}
                           >
                             {valueTypes.map((valueType) => (
                               <MenuItem key={valueType.id} value={valueType.id}>
