@@ -784,21 +784,27 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
                     {/* Medical Value Type Selector */}
-                    <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-                      <InputLabel id="value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
-                      <Select
-                        labelId="value-type-label"
-                        value={selectedValueType}
-                        label={t('medicalValueTypeLabel')}
-                        onChange={(e) => setSelectedValueType(e.target.value)}
-                      >
-                        {valueTypes.map((valueType) => (
-                          <MenuItem key={valueType.id} value={valueType.id}>
-                            {getLocalizedValueTypeName(valueType)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    <Card elevation={3} sx={{ flex: 1 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('medicalValueTypeLabel')}
+                        </Typography>
+                        <FormControl fullWidth size="small">
+                          <Select
+                            value={selectedValueType}
+                            onChange={(e) => setSelectedValueType(e.target.value)}
+                            displayEmpty
+                            sx={{ mt: 1 }}
+                          >
+                            {valueTypes.map((valueType) => (
+                              <MenuItem key={valueType.id} value={valueType.id}>
+                                {getLocalizedValueTypeName(valueType)}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </CardContent>
+                    </Card>
                     
                     <Card elevation={3} sx={{ flex: 1 }}>
                       <CardContent sx={{ p: 2 }}>
