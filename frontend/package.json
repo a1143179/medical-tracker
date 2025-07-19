@@ -40,7 +40,8 @@
     "test:e2e:open": "start-server-and-test start http://localhost:55555 cypress:open",
     "cypress:open:debug": "cross-env DEBUG=cypress:* npx cypress open",
     "cypress:run:debug": "cross-env DEBUG=cypress:* npx cypress run",
-    "serve": "npx serve -s build -l 3000"
+    "serve": "npx serve -s build -l 3000",
+    "lint": "eslint --ext .js,.jsx src"
   },
   "eslintConfig": {
     "extends": [
