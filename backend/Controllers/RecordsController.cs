@@ -52,6 +52,7 @@ public class RecordsController : ControllerBase
         }
 
         var records = await _context.Records
+            .Include(r => r.ValueType)
             .Where(r => r.UserId == userId.Value)
             .OrderByDescending(r => r.MeasurementTime)
             .ToListAsync();
@@ -70,7 +71,7 @@ public class RecordsController : ControllerBase
 
         if (dto.Value <= 0)
         {
-            return BadRequest("Blood sugar value must be greater than 0");
+            return BadRequest("Value must be greater than 0");
         }
 
         var record = new Record
@@ -78,7 +79,8 @@ public class RecordsController : ControllerBase
             Value = dto.Value,
             MeasurementTime = dto.MeasurementTime,
             Notes = dto.Notes,
-            UserId = userId.Value
+            UserId = userId.Value,
+            ValueTypeId = dto.ValueTypeId ?? 1 // Default to Blood Sugar
         };
 
         _context.Records.Add(record);
@@ -98,7 +100,7 @@ public class RecordsController : ControllerBase
 
         if (dto.Value <= 0)
         {
-            return BadRequest("Blood sugar value must be greater than 0");
+            return BadRequest("Value must be greater than 0");
         }
 
         var record = await _context.Records
@@ -112,6 +114,7 @@ public class RecordsController : ControllerBase
         record.Value = dto.Value;
         record.MeasurementTime = dto.MeasurementTime;
         record.Notes = dto.Notes;
+        record.ValueTypeId = dto.ValueTypeId ?? record.ValueTypeId;
 
         await _context.SaveChangesAsync();
 

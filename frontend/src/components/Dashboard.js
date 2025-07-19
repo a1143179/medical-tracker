@@ -28,7 +28,11 @@ import {
   Tabs,
   Tab,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -58,6 +62,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [records, setRecords] = useState([]);
+  const [valueTypes, setValueTypes] = useState([]);
+  const [selectedValueType, setSelectedValueType] = useState(1); // Default to Blood Sugar
   const [isEditing, setIsEditing] = useState(false);
   const [currentRecord, setCurrentRecord] = useState({ 
     id: null, 
@@ -71,13 +77,14 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     })(), 
     value: '', 
-    notes: ''
+    notes: '',
+    valueTypeId: 1
   });
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [activeTab, setActiveTab] = useState(0);
-    const [message, setMessage] = useState({ text: '', severity: 'info', show: false });
+  const [message, setMessage] = useState({ text: '', severity: 'info', show: false });
   
   const showMessage = useCallback((text, severity = 'info') => {
     setMessage({ text, severity, show: true });
@@ -85,6 +92,18 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setTimeout(() => setMessage(prev => ({ ...prev, show: false })), 6000);
   }, []);
   
+  const fetchValueTypes = useCallback(async () => {
+    try {
+      const response = await fetch('/api/valuetypes', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      setValueTypes(data);
+    } catch (error) {
+      console.error('Failed to fetch value types:', error);
+    }
+  }, []);
+
   const fetchRecords = useCallback(async () => {
     try {
       const userId = user?.id;
@@ -102,6 +121,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       showMessage(t('failedToFetchRecords'), 'error');
     }
   }, [user?.id, t, showMessage]);
+
+  useEffect(() => {
+    fetchValueTypes();
+  }, [fetchValueTypes]);
 
   useEffect(() => {
     if (user?.id) {
@@ -144,6 +167,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value,
+            valueTypeId: currentRecord.valueTypeId,
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -163,7 +187,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           credentials: 'include',
           body: JSON.stringify({ 
             ...currentRecord, 
-            value: value, 
+            value: value,
+            valueTypeId: currentRecord.valueTypeId,
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -239,7 +264,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       id: null, 
       measurementTime: localDateTime, 
       value: '', 
-      notes: ''
+      notes: '',
+      valueTypeId: selectedValueType
     });
     setOpenDialog(false);
   };
@@ -531,6 +557,23 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         <Box sx={{ px: 1 }}>
           <Paper elevation={3} sx={{ p: 2 }}>
             <Box component="form" onSubmit={handleSubmit}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel id="mobile-value-type-label">Medical Value Type</InputLabel>
+                <Select
+                  labelId="mobile-value-type-label"
+                  value={currentRecord.valueTypeId}
+                  label="Medical Value Type"
+                  name="valueTypeId"
+                  onChange={handleInputChange}
+                >
+                  {valueTypes.map((valueType) => (
+                    <MenuItem key={valueType.id} value={valueType.id}>
+                      {valueType.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              
               <TextField
                 fullWidth
                 label={t('dateTimeLabel')}
@@ -608,23 +651,40 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       </Typography>
       <Box sx={{ px: 1 }}>
         <Paper elevation={3} sx={{ p: 2 }}>
-          <Box component="form" onSubmit={handleSubmit}>
-                          <TextField
-                fullWidth
-                label={t('dateTimeLabel')}
-                type="datetime-local"
-                name="measurementTime"
-                value={currentRecord.measurementTime}
+                    <Box component="form" onSubmit={handleSubmit}>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="mobile-edit-value-type-label">Medical Value Type</InputLabel>
+              <Select
+                labelId="mobile-edit-value-type-label"
+                value={currentRecord.valueTypeId}
+                label="Medical Value Type"
+                name="valueTypeId"
                 onChange={handleInputChange}
-                required
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  step: 60,
-                  autoComplete: 'off',
-                  inputMode: 'numeric',
-                }}
-              />
+              >
+                {valueTypes.map((valueType) => (
+                  <MenuItem key={valueType.id} value={valueType.id}>
+                    {valueType.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              label={t('dateTimeLabel')}
+              type="datetime-local"
+              name="measurementTime"
+              value={currentRecord.measurementTime}
+              onChange={handleInputChange}
+              required
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                step: 60,
+                autoComplete: 'off',
+                inputMode: 'numeric',
+              }}
+            />
               <TextField
                 fullWidth
                 label={t('medicalRecordLabel')}
@@ -717,6 +777,23 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               <Box sx={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', height: '100%', mr: 2 }}>
                 <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
+                    {/* Medical Value Type Selector */}
+                    <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                      <InputLabel id="value-type-label">Medical Value Type</InputLabel>
+                      <Select
+                        labelId="value-type-label"
+                        value={selectedValueType}
+                        label="Medical Value Type"
+                        onChange={(e) => setSelectedValueType(e.target.value)}
+                      >
+                        {valueTypes.map((valueType) => (
+                          <MenuItem key={valueType.id} value={valueType.id}>
+                            {valueType.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    
                     <Card elevation={3} sx={{ flex: 1 }}>
                       <CardContent sx={{ p: 2 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>

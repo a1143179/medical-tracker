@@ -9,4 +9,8 @@ public class Record
     public int UserId { get; set; }
     public User User { get; set; } = null!;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    // New foreign key for MedicalValueType
+    public int ValueTypeId { get; set; } = 1; // Default to Blood Sugar (ID 1)
+    public MedicalValueType ValueType { get; set; } = null!;
 } 

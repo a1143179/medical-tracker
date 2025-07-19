@@ -194,17 +194,17 @@ const Header = ({ onMobileNavigate }) => {
           </Box>
           <Divider />
           <List>
-            <ListItem onClick={() => { if (typeof onMobileNavigate === 'function') onMobileNavigate('add'); handleMobileMenuToggle(); }} data-testid="add-record-menu-item">
-              <ListItemIcon>
-                <Person />
-              </ListItemIcon>
-              <ListItemText primary={t('addNewRecord')} />
-            </ListItem>
             <ListItem onClick={() => { if (typeof onMobileNavigate === 'function') onMobileNavigate('dashboard'); handleMobileMenuToggle(); }}>
               <ListItemIcon>
                 <Dashboard />
               </ListItemIcon>
               <ListItemText primary={t('dashboard')} />
+            </ListItem>
+            <ListItem onClick={() => { if (typeof onMobileNavigate === 'function') onMobileNavigate('add'); handleMobileMenuToggle(); }} data-testid="add-record-menu-item">
+              <ListItemIcon>
+                <Person />
+              </ListItemIcon>
+              <ListItemText primary={t('addNewRecord')} />
             </ListItem>
             <ListItem onClick={() => { if (typeof onMobileNavigate === 'function') onMobileNavigate('analytics'); handleMobileMenuToggle(); }}>
               <ListItemIcon>
