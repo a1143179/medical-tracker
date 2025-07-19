@@ -9,7 +9,11 @@ public class MedicalValueType
     
     [Required]
     [MaxLength(50)]
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty; // English name
+    
+    [Required]
+    [MaxLength(50)]
+    public string NameZh { get; set; } = string.Empty; // Chinese name
     
     [MaxLength(20)]
     public string Unit { get; set; } = string.Empty;

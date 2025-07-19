@@ -57,7 +57,7 @@ const API_URL = '/api/records';
 
 function Dashboard({ mobilePage, onMobilePageChange }) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
@@ -85,6 +85,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [activeTab, setActiveTab] = useState(0);
   const [message, setMessage] = useState({ text: '', severity: 'info', show: false });
+  
+  // Function to get localized value type name
+  const getLocalizedValueTypeName = useCallback((valueType) => {
+    if (!valueType) return '';
+    return language === 'zh' ? valueType.nameZh : valueType.name;
+  }, [language]);
   
   const showMessage = useCallback((text, severity = 'info') => {
     setMessage({ text, severity, show: true });
@@ -568,7 +574,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 >
                   {valueTypes.map((valueType) => (
                     <MenuItem key={valueType.id} value={valueType.id}>
-                      {valueType.name}
+                      {getLocalizedValueTypeName(valueType)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -663,7 +669,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               >
                 {valueTypes.map((valueType) => (
                   <MenuItem key={valueType.id} value={valueType.id}>
-                    {valueType.name}
+                    {getLocalizedValueTypeName(valueType)}
                   </MenuItem>
                 ))}
               </Select>
@@ -788,7 +794,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                       >
                         {valueTypes.map((valueType) => (
                           <MenuItem key={valueType.id} value={valueType.id}>
-                            {valueType.name}
+                            {getLocalizedValueTypeName(valueType)}
                           </MenuItem>
                         ))}
                       </Select>
