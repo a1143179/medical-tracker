@@ -45,6 +45,9 @@ namespace backend.Migrations
                     { 4, "Weight", "kg", true }
                 });
 
+            // Update existing records to have ValueTypeId = 1 (Blood Sugar) BEFORE adding foreign key
+            migrationBuilder.Sql("UPDATE \"Records\" SET \"ValueTypeId\" = 1 WHERE \"ValueTypeId\" = 0");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Records_ValueTypeId",
                 table: "Records",
@@ -57,9 +60,6 @@ namespace backend.Migrations
                 principalTable: "ValueTypes",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
-
-            // Update existing records to have ValueTypeId = 1 (Blood Sugar)
-            migrationBuilder.Sql("UPDATE \"Records\" SET \"ValueTypeId\" = 1 WHERE \"ValueTypeId\" = 0");
         }
 
         /// <inheritdoc />

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250719225212_AddMedicalValueTypeTableAndForeignKey")]
+    [Migration("20250719225740_AddMedicalValueTypeTableAndForeignKey")]
     partial class AddMedicalValueTypeTableAndForeignKey
     {
         /// <inheritdoc />
