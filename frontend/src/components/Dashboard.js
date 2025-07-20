@@ -63,7 +63,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   
   const [records, setRecords] = useState([]);
   const [valueTypes, setValueTypes] = useState([]);
-  const [selectedValueType, setSelectedValueType] = useState(user?.preferredValueTypeId || 1); // Use user's preferred type or default to Blood Sugar
+  const [selectedValueType, setSelectedValueType] = useState(''); // Initialize as empty string
   const [isEditing, setIsEditing] = useState(false);
   const [currentRecord, setCurrentRecord] = useState({ 
     id: null, 
@@ -79,7 +79,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     value: '', 
     value2: '', // Second value for blood pressure
     notes: '',
-    valueTypeId: 1
+    valueTypeId: ''
   });
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(0);
@@ -140,6 +140,22 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       ? (recordsWithValue2.reduce((sum, record) => sum + record.value2, 0) / recordsWithValue2.length).toFixed(1)
       : null;
   }, [filteredRecords, requiresTwoValues]);
+
+  // Memoize highest reading
+  const highestRecord = useMemo(() => {
+    if (filteredRecords.length === 0) return null;
+    return filteredRecords.reduce((max, record) => 
+      record.value > max.value ? record : max
+    );
+  }, [filteredRecords]);
+
+  // Memoize lowest reading
+  const lowestRecord = useMemo(() => {
+    if (filteredRecords.length === 0) return null;
+    return filteredRecords.reduce((min, record) => 
+      record.value < min.value ? record : min
+    );
+  }, [filteredRecords]);
   
   // Memoize latest record
   const latestRecord = useMemo(() => {
@@ -229,12 +245,22 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     }
   }, [user?.id, fetchRecords]);
 
+  // Set default value type when valueTypes are loaded
+  useEffect(() => {
+    if (valueTypes.length > 0 && !selectedValueType) {
+      const defaultType = user?.preferredValueTypeId || valueTypes[0]?.id;
+      if (defaultType) {
+        setSelectedValueType(defaultType);
+      }
+    }
+  }, [valueTypes, selectedValueType, user?.preferredValueTypeId]);
+
   // Sync selected value type with user's preferred type when user changes
   useEffect(() => {
-    if (user?.preferredValueTypeId && user.preferredValueTypeId !== selectedValueType) {
+    if (user?.preferredValueTypeId && user.preferredValueTypeId !== selectedValueType && valueTypes.length > 0) {
       setSelectedValueType(user.preferredValueTypeId);
     }
-  }, [user?.preferredValueTypeId, selectedValueType]);
+  }, [user?.preferredValueTypeId, selectedValueType, valueTypes.length]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -589,6 +615,65 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             )}
           </CardContent>
         </Card>
+        
+        <Card elevation={3}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {t('highestReading')}
+            </Typography>
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {highestRecord ? (
+                requiresTwoValues() && highestRecord.value2 ? (
+                  `${highestRecord.value}/${highestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${highestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )
+              ) : t('noData')}
+            </Typography>
+            {highestRecord && (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {formatDateTime(highestRecord.measurementTime)}
+                </Typography>
+                <Chip 
+                  label={getBloodSugarStatus(highestRecord.value).label}
+                  color={getBloodSugarStatus(highestRecord.value).color}
+                  size="medium"
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card elevation={3}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {t('lowestReading')}
+            </Typography>
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {lowestRecord ? (
+                requiresTwoValues() && lowestRecord.value2 ? (
+                  `${lowestRecord.value}/${lowestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${lowestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )
+              ) : t('noData')}
+            </Typography>
+            {lowestRecord && (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {formatDateTime(lowestRecord.measurementTime)}
+                </Typography>
+                <Chip 
+                  label={getBloodSugarStatus(lowestRecord.value).label}
+                  color={getBloodSugarStatus(lowestRecord.value).color}
+                  size="medium"
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+        
         <Card elevation={3}>
           <CardContent sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -1105,6 +1190,67 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         )}
                       </CardContent>
                     </Card>
+                    
+                    <Card elevation={3} sx={{ flex: 1 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('highestReading')}
+                        </Typography>
+                        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                          {highestRecord ? (
+                            requiresTwoValues() && highestRecord.value2 ? (
+                              `${highestRecord.value}/${highestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                            ) : (
+                              `${highestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )
+                          ) : t('noData')}
+                        </Typography>
+                        {highestRecord && (
+                          <>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                              {formatDateTime(highestRecord.measurementTime)}
+                            </Typography>
+                            <Chip 
+                              label={getBloodSugarStatus(highestRecord.value).label}
+                              color={getBloodSugarStatus(highestRecord.value).color}
+                              size="small"
+                              sx={{ mt: 0.5 }}
+                            />
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card elevation={3} sx={{ flex: 1 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('lowestReading')}
+                        </Typography>
+                        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                          {lowestRecord ? (
+                            requiresTwoValues() && lowestRecord.value2 ? (
+                              `${lowestRecord.value}/${lowestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                            ) : (
+                              `${lowestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )
+                          ) : t('noData')}
+                        </Typography>
+                        {lowestRecord && (
+                          <>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                              {formatDateTime(lowestRecord.measurementTime)}
+                            </Typography>
+                            <Chip 
+                              label={getBloodSugarStatus(lowestRecord.value).label}
+                              color={getBloodSugarStatus(lowestRecord.value).color}
+                              size="small"
+                              sx={{ mt: 0.5 }}
+                            />
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
                     <Card elevation={3} sx={{ flex: 1 }}>
                       <CardContent sx={{ p: 2 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -1212,12 +1358,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Tooltip title={t('edit')}>
-                                      <IconButton onClick={() => handleEdit(record)} color="primary" title="edit">
+                                      <IconButton onClick={() => handleEdit(record)} color="primary">
                                         <EditIcon />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title={t('delete')}>
-                                      <IconButton onClick={() => handleDelete(record.id)} color="error" title="delete">
+                                      <IconButton onClick={() => handleDelete(record.id)} color="error">
                                         <DeleteIcon />
                                       </IconButton>
                                     </Tooltip>

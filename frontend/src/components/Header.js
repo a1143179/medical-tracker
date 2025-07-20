@@ -81,8 +81,18 @@ const Header = ({ onMobileNavigate }) => {
               <MenuIcon />
             </IconButton>
 
-            {/* Page Title - Hidden on mobile */}
-            
+            {/* Logo Only */}
+            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+              <Box sx={{ 
+                width: { xs: 120, sm: 130, md: 150, lg: 180 },
+                height: { xs: 40, sm: 43, md: 50, lg: 60 },
+                mr: 1, 
+                display: { xs: 'flex', md: 'flex' },
+                bgcolor: 'transparent'
+              }}>
+                <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </Box>
+            </Box>
             
             {/* Language Selector and Profile Icon Container */}
             <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
