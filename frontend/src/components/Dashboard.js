@@ -92,15 +92,34 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return language === 'zh' ? valueType.nameZh : valueType.name;
   }, [language]);
   
-  // Function to get selected value type
-  const getSelectedValueType = useCallback(() => {
+  // Memoize selected value type to prevent unnecessary re-renders
+  const selectedValueTypeData = useMemo(() => {
     return valueTypes.find(vt => vt.id === selectedValueType);
   }, [valueTypes, selectedValueType]);
   
-  // Function to filter records by selected value type
-  const getFilteredRecords = useCallback(() => {
+  // Function to get selected value type
+  const getSelectedValueType = useCallback(() => {
+    return selectedValueTypeData;
+  }, [selectedValueTypeData]);
+  
+  // Memoize filtered records to prevent unnecessary re-renders
+  const filteredRecords = useMemo(() => {
     return records.filter(record => record.valueTypeId === selectedValueType);
   }, [records, selectedValueType]);
+  
+
+  
+  // Memoize average value calculation
+  const averageValue = useMemo(() => {
+    return filteredRecords.length > 0 
+      ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
+      : 0;
+  }, [filteredRecords]);
+  
+  // Memoize latest record
+  const latestRecord = useMemo(() => {
+    return filteredRecords[0];
+  }, [filteredRecords]);
   
   // Function to get status based on value type and value
   const getValueStatus = useCallback((value) => {
@@ -133,6 +152,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         return { label: t('normal'), color: 'success' };
     }
   }, [getSelectedValueType, t]);
+  
+  // Memoize average status
+  const averageStatus = useMemo(() => {
+    return getValueStatus(Number(averageValue));
+  }, [averageValue, getValueStatus]);
   
   const showMessage = useCallback((text, severity = 'info') => {
     setMessage({ text, severity, show: true });
@@ -376,9 +400,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     return current > previous ? <TrendingUpIcon color="error" /> : <TrendingDownIcon color="success" />;
   };
 
-  // Get filtered records for the selected value type
-  const filteredRecords = getFilteredRecords();
-  
   // 1. Sort chartData from oldest to newest for X axis
   const sortedRecords = [...filteredRecords].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
   const chartData = sortedRecords.map(record => ({
@@ -436,19 +457,51 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const chart24HourData = calculate24HourData();
 
-  const averageValue = filteredRecords.length > 0 
-    ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
-    : 0;
-
-  const latestRecord = filteredRecords[0];
-
-  // 2. Get average status for High/Low label
-  const averageStatus = getBloodSugarStatus(Number(averageValue));
-
   // Mobile Dashboard Content
   const MobileDashboard = () => (
     <Box sx={{ p: 0 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, px: 1 }}>
+        {/* Medical Value Type Selector */}
+        <Card elevation={3}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {t('medicalValueTypeLabel')}
+            </Typography>
+            <FormControl fullWidth size="small">
+              <Select
+                value={selectedValueType}
+                onChange={(e) => setSelectedValueType(e.target.value)}
+                displayEmpty
+                sx={{ mt: 1 }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { 
+                      maxHeight: 200
+                    }
+                  },
+                  anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  },
+                  transformOrigin: {
+                    vertical: 'top',
+                    horizontal: 'left',
+                  },
+                  disableScrollLock: true,
+                  keepMounted: false,
+                  getContentAnchorEl: null
+                }}
+              >
+                {valueTypes.map((valueType) => (
+                  <MenuItem key={valueType.id} value={valueType.id}>
+                    {getLocalizedValueTypeName(valueType)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </CardContent>
+        </Card>
+        
         <Card elevation={3}>
           <CardContent sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -614,6 +667,24 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   label={t('medicalValueTypeLabel')}
                   name="valueTypeId"
                   onChange={handleInputChange}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { 
+                        maxHeight: 200
+                      }
+                    },
+                    anchorOrigin: {
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    },
+                    transformOrigin: {
+                      vertical: 'top',
+                      horizontal: 'left',
+                    },
+                    disableScrollLock: true,
+                    keepMounted: false,
+                    getContentAnchorEl: null
+                  }}
                 >
                   {valueTypes.map((valueType) => (
                     <MenuItem key={valueType.id} value={valueType.id}>
@@ -709,6 +780,24 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={t('medicalValueTypeLabel')}
                 name="valueTypeId"
                 onChange={handleInputChange}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { 
+                      maxHeight: 200
+                    }
+                  },
+                  anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  },
+                  transformOrigin: {
+                    vertical: 'top',
+                    horizontal: 'left',
+                  },
+                  disableScrollLock: true,
+                  keepMounted: false,
+                  getContentAnchorEl: null
+                }}
               >
                 {valueTypes.map((valueType) => (
                   <MenuItem key={valueType.id} value={valueType.id}>
@@ -808,7 +897,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       <Box sx={{ 
         flexGrow: 1, 
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         {isMobile ? (
           // Mobile Layout
@@ -821,10 +912,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         ) : (
           // Desktop Layout
           <Container maxWidth="lg" sx={{ py: 2 }}>
-            <Box sx={{ display: 'flex', minHeight: '80vh', height: '100%' }}>
+            <Box sx={{ display: 'flex', minHeight: '80vh', height: '100%', position: 'relative' }}>
               {/* Overview Panel */}
-              <Box sx={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', height: '100%', mr: 2 }}>
-                <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Box sx={{ flex: '0 0 320px', minWidth: 280, display: 'flex', flexDirection: 'column', height: '100%', mr: 2, position: 'relative' }}>
+                <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, flex: 1 }}>
                     {/* Medical Value Type Selector */}
                     <Card elevation={3} sx={{ flex: 1 }}>
@@ -838,6 +929,24 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             onChange={(e) => setSelectedValueType(e.target.value)}
                             displayEmpty
                             sx={{ mt: 1 }}
+                            MenuProps={{
+                              PaperProps: {
+                                sx: { 
+                                  maxHeight: 200
+                                }
+                              },
+                              anchorOrigin: {
+                                vertical: 'bottom',
+                                horizontal: 'left',
+                              },
+                              transformOrigin: {
+                                vertical: 'top',
+                                horizontal: 'left',
+                              },
+                              disableScrollLock: true,
+                              keepMounted: false,
+                              getContentAnchorEl: null
+                            }}
                           >
                             {valueTypes.map((valueType) => (
                               <MenuItem key={valueType.id} value={valueType.id}>
@@ -988,7 +1097,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         <TablePagination
                           rowsPerPageOptions={[5, 10, 25, 50]}
                           component="div"
-                          count={filteredRecords.length}
+                                                      count={filteredRecords.length}
                           rowsPerPage={rowsPerPage}
                           page={page}
                           onPageChange={handleChangePage}
