@@ -77,6 +77,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     })(), 
     value: '', 
+    value2: '', // Second value for blood pressure
     notes: '',
     valueTypeId: 1
   });
@@ -100,6 +101,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   // Function to get selected value type
   const getSelectedValueType = useCallback(() => {
     return selectedValueTypeData;
+  }, [selectedValueTypeData]);
+  
+  // Function to check if current value type requires two values
+  const requiresTwoValues = useCallback(() => {
+    return selectedValueTypeData?.requiresTwoValues || false;
   }, [selectedValueTypeData]);
   
   // Memoize filtered records to prevent unnecessary re-renders
@@ -226,6 +232,16 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         return;
       }
 
+      // Validate second value if required
+      let value2 = null;
+      if (requiresTwoValues() && currentRecord.value2) {
+        value2 = parseFloat(currentRecord.value2);
+        if (isNaN(value2) || value2 < 0.1 || value2 > 1000) {
+          showMessage('Second value must be between 0.1 and 1000', 'error');
+          return;
+        }
+      }
+
       if (currentRecord.notes && currentRecord.notes.length > 1000) {
         showMessage('Notes cannot exceed 1000 characters', 'error');
         return;
@@ -239,6 +255,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value,
+            value2: value2,
             valueTypeId: currentRecord.valueTypeId,
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
@@ -260,6 +277,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value,
+            value2: value2,
             valueTypeId: currentRecord.valueTypeId,
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
@@ -297,7 +315,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setCurrentRecord({ 
       ...record, 
       measurementTime: localDateTime,
-      value: record.value !== undefined && record.value !== null ? String(record.value) : ''
+      value: record.value !== undefined && record.value !== null ? String(record.value) : '',
+      value2: record.value2 !== undefined && record.value2 !== null ? String(record.value2) : ''
     });
     setOpenDialog(true);
     if (isMobile) {
@@ -336,6 +355,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       id: null, 
       measurementTime: localDateTime, 
       value: '', 
+      value2: '', // Reset second value
       notes: '',
       valueTypeId: selectedValueType
     });
@@ -712,7 +732,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               />
               <TextField
                 fullWidth
-                label={medicalRecordLabel}
+                label={requiresTwoValues() ? t('systolicPressure') : medicalRecordLabel}
                 type="text"
                 name="value"
                 value={valueValue}
@@ -727,6 +747,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   spellCheck: 'false',
                 }}
               />
+              {requiresTwoValues() && (
+                <TextField
+                  fullWidth
+                  label={t('diastolicPressure')}
+                  type="text"
+                  name="value2"
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
+                  required
+                  margin="normal"
+                  inputProps={{
+                    inputMode: 'decimal',
+                    autoComplete: 'off',
+                    autoCorrect: 'off',
+                    autoCapitalize: 'off',
+                    spellCheck: 'false',
+                  }}
+                />
+              )}
               <TextField
                 fullWidth
                 label={t('notesLabel')}
@@ -825,7 +864,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
               <TextField
                 fullWidth
-                label={t('medicalRecordLabel')}
+                label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                 type="text"
                 name="value"
                 value={currentRecord.value ?? ''}
@@ -840,6 +879,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   spellCheck: 'false',
                 }}
               />
+              {requiresTwoValues() && (
+                <TextField
+                  fullWidth
+                  label={t('diastolicPressure')}
+                  type="text"
+                  name="value2"
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
+                  required
+                  margin="normal"
+                  inputProps={{
+                    inputMode: 'decimal',
+                    autoComplete: 'off',
+                    autoCorrect: 'off',
+                    autoCapitalize: 'off',
+                    spellCheck: 'false',
+                  }}
+                />
+              )}
             <TextField
               fullWidth
               label={t('notesLabel')}

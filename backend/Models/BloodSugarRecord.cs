@@ -4,6 +4,10 @@ public class Record
 {
     public int Id { get; set; }
     public decimal Value { get; set; }
+    
+    // Second value for measurements that need two values (e.g., blood pressure)
+    public decimal? Value2 { get; set; }
+    
     public DateTime MeasurementTime { get; set; }
     public string? Notes { get; set; }
     public int UserId { get; set; }
