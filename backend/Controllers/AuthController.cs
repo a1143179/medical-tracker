@@ -123,9 +123,47 @@ public class AuthController : ControllerBase
         {
             Id = user.Id,
             Email = user.Email,
-            Name = user.Name
+            Name = user.Name,
+            PreferredValueTypeId = user.PreferredValueTypeId
         };
 
         return Ok(userDto);
+    }
+
+    [HttpPut("preferred-value-type")]
+    public async Task<IActionResult> UpdatePreferredValueType([FromBody] UpdatePreferredValueTypeDto dto)
+    {
+        // Get token from Authorization header or cookie
+        var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") 
+                   ?? Request.Cookies["MedicalTracker.Auth.JWT"];
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return Unauthorized();
+        }
+
+        var email = _jwtService.GetUserEmailFromToken(token);
+        if (string.IsNullOrEmpty(email))
+        {
+            return Unauthorized();
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            return Unauthorized();
+        }
+
+        // Validate that the value type exists
+        var valueType = await _context.ValueTypes.FirstOrDefaultAsync(vt => vt.Id == dto.PreferredValueTypeId);
+        if (valueType == null)
+        {
+            return BadRequest(new { message = "Invalid value type ID" });
+        }
+
+        user.PreferredValueTypeId = dto.PreferredValueTypeId;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Preferred value type updated successfully" });
     }
 } 

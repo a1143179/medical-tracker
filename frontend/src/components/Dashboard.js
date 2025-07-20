@@ -56,14 +56,14 @@ import {
 const API_URL = '/api/records';
 
 function Dashboard({ mobilePage, onMobilePageChange }) {
-  const { user } = useAuth();
+  const { user, updatePreferredValueType } = useAuth();
   const { t, language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [records, setRecords] = useState([]);
   const [valueTypes, setValueTypes] = useState([]);
-  const [selectedValueType, setSelectedValueType] = useState(1); // Default to Blood Sugar
+  const [selectedValueType, setSelectedValueType] = useState(user?.preferredValueTypeId || 1); // Use user's preferred type or default to Blood Sugar
   const [isEditing, setIsEditing] = useState(false);
   const [currentRecord, setCurrentRecord] = useState({ 
     id: null, 
@@ -102,6 +102,16 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const getSelectedValueType = useCallback(() => {
     return selectedValueTypeData;
   }, [selectedValueTypeData]);
+
+  // Function to handle value type change
+  const handleValueTypeChange = async (newValueType) => {
+    setSelectedValueType(newValueType);
+    
+    // Save to database if user is authenticated
+    if (user?.id) {
+      await updatePreferredValueType(newValueType);
+    }
+  };
   
   // Function to check if current value type requires two values
   const requiresTwoValues = useCallback(() => {
@@ -210,6 +220,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     }
   }, [user?.id, fetchRecords]);
 
+  // Sync selected value type with user's preferred type when user changes
+  useEffect(() => {
+    if (user?.preferredValueTypeId && user.preferredValueTypeId !== selectedValueType) {
+      setSelectedValueType(user.preferredValueTypeId);
+    }
+  }, [user?.preferredValueTypeId, selectedValueType]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     // Always store as string to preserve decimals as typed and prevent focus loss
@@ -256,7 +273,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             ...currentRecord, 
             value: value,
             value2: value2,
-            valueTypeId: currentRecord.valueTypeId,
+            valueTypeId: selectedValueType, // Use current selected value type
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -278,7 +295,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             ...currentRecord, 
             value: value,
             value2: value2,
-            valueTypeId: currentRecord.valueTypeId,
+            valueTypeId: selectedValueType, // Use current selected value type
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -357,7 +374,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       value: '', 
       value2: '', // Reset second value
       notes: '',
-      valueTypeId: selectedValueType
+      valueTypeId: selectedValueType // Use current selected value type
     });
     setOpenDialog(false);
   };
@@ -490,7 +507,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             <FormControl fullWidth size="small">
               <Select
                 value={selectedValueType}
-                onChange={(e) => setSelectedValueType(e.target.value)}
+                onChange={(e) => handleValueTypeChange(e.target.value)}
                 displayEmpty
                 sx={{ mt: 1 }}
                 MenuProps={{
@@ -679,40 +696,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         <Box sx={{ px: 1 }}>
           <Paper elevation={3} sx={{ p: 2 }}>
             <Box component="form" onSubmit={handleSubmit}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel id="mobile-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
-                <Select
-                  labelId="mobile-value-type-label"
-                  value={currentRecord.valueTypeId}
-                  label={t('medicalValueTypeLabel')}
-                  name="valueTypeId"
-                  onChange={handleInputChange}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { 
-                        maxHeight: 200
-                      }
-                    },
-                    anchorOrigin: {
-                      vertical: 'bottom',
-                      horizontal: 'left',
-                    },
-                    transformOrigin: {
-                      vertical: 'top',
-                      horizontal: 'left',
-                    },
-                    disableScrollLock: true,
-                    keepMounted: false,
-                    getContentAnchorEl: null
-                  }}
-                >
-                  {valueTypes.map((valueType) => (
-                    <MenuItem key={valueType.id} value={valueType.id}>
-                      {getLocalizedValueTypeName(valueType)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
               
               <TextField
                 fullWidth
@@ -984,7 +967,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         <FormControl fullWidth size="small">
                           <Select
                             value={selectedValueType}
-                            onChange={(e) => setSelectedValueType(e.target.value)}
+                            onChange={(e) => handleValueTypeChange(e.target.value)}
                             displayEmpty
                             sx={{ mt: 1 }}
                             MenuProps={{
