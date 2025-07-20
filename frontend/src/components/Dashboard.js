@@ -1358,12 +1358,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Tooltip title={t('edit')}>
-                                      <IconButton onClick={() => handleEdit(record)} color="primary" title="edit">
+                                      <IconButton onClick={() => handleEdit(record)} color="primary">
                                         <EditIcon />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title={t('delete')}>
-                                      <IconButton onClick={() => handleDelete(record.id)} color="error" title="delete">
+                                      <IconButton onClick={() => handleDelete(record.id)} color="error">
                                         <DeleteIcon />
                                       </IconButton>
                                     </Tooltip>

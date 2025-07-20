@@ -142,7 +142,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AppWithProviders>
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AppLayout />
         </Router>
       </AppWithProviders>
