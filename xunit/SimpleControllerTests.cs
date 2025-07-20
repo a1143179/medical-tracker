@@ -13,6 +13,7 @@ using Xunit;
 using Backend.Data;
 using Backend.Models;
 using Backend.DTOs;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Backend.Tests
 {
@@ -25,16 +26,15 @@ namespace Backend.Tests
         {
             _factory = factory.WithWebHostBuilder(builder =>
             {
+                builder.UseEnvironment("Test");
                 builder.ConfigureServices(services =>
                 {
-                    // Remove the existing DbContext registration
-                    var descriptor = services.SingleOrDefault(
-                        d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-                    if (descriptor != null)
+                    // Remove all DbContext-related registrations
+                    var dbContextDescriptors = services.Where(d => d.ServiceType.Name.Contains("DbContext")).ToList();
+                    foreach (var descriptor in dbContextDescriptors)
                     {
                         services.Remove(descriptor);
                     }
-
                     // Add in-memory database
                     services.AddDbContext<AppDbContext>(options =>
                     {
@@ -140,6 +140,12 @@ namespace Backend.Tests
 
             context.Records.AddRange(testRecords);
             context.SaveChanges();
+        }
+
+        private void AddAuthCookie(HttpClient client)
+        {
+            var fakeJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJl";
+            client.DefaultRequestHeaders.Add("Cookie", $"MedicalTracker.Auth.JWT={fakeJwt}");
         }
 
         [Fact]

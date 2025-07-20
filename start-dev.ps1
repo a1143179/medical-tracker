@@ -40,6 +40,15 @@ Write-Host "Backend (Port 55555): $(Get-PortStatus 55555)" -ForegroundColor $(if
 Write-Host "Frontend (Port 55556): $(Get-PortStatus 55556)" -ForegroundColor $(if (Test-PortAvailable 55556) { 'Green' } else { 'Yellow' })
 Write-Host "=======================================" -ForegroundColor Green
 
+# Check if Docker is running (required for any service startup)
+$dockerInfo = & docker info 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[Error] Docker is not running or not installed. Please start Docker Desktop first." -ForegroundColor Red
+    exit 1
+} else {
+    Write-Host "[Info] Docker is running." -ForegroundColor Green
+}
+
 if ($CHECK_PORTS) {
     return
 }

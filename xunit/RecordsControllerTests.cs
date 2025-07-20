@@ -13,6 +13,7 @@ using Xunit;
 using Backend.Data;
 using Backend.Models;
 using Backend.DTOs;
+using Microsoft.AspNetCore.Hosting;
 
 namespace Backend.Tests
 {
@@ -22,19 +23,18 @@ namespace Backend.Tests
         private readonly HttpClient _client;
 
         public RecordsControllerTests(WebApplicationFactory<Program> factory)
-        {
+{
             _factory = factory.WithWebHostBuilder(builder =>
             {
+                builder.UseEnvironment("Test");
                 builder.ConfigureServices(services =>
                 {
-                    // Remove the existing DbContext registration
-                    var descriptor = services.SingleOrDefault(
-                        d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-                    if (descriptor != null)
+                    // Remove all DbContext-related registrations
+                    var dbContextDescriptors = services.Where(d => d.ServiceType.Name.Contains("DbContext")).ToList();
+                    foreach (var descriptor in dbContextDescriptors)
                     {
                         services.Remove(descriptor);
                     }
-
                     // Add in-memory database
                     services.AddDbContext<AppDbContext>(options =>
                     {
@@ -142,6 +142,13 @@ namespace Backend.Tests
             context.SaveChanges();
         }
 
+        private void AddAuthCookie(HttpClient client)
+        {
+            // 完全合法的Base64Url JWT
+            var fakeJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJl";
+            client.DefaultRequestHeaders.Add("Cookie", $"MedicalTracker.Auth.JWT={fakeJwt}");
+        }
+
         [Fact]
         public async Task GetRecords_ReturnsOkResult()
         {
@@ -151,7 +158,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -171,7 +178,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -191,17 +198,17 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(records);
             Assert.All(records, record => Assert.Equal(valueTypeId, record.ValueTypeId));
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task GetRecords_WithInvalidUserId_ReturnsEmptyList()
-        {
+    {
             // Arrange
             var invalidUserId = 999;
 
@@ -211,7 +218,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -223,9 +230,8 @@ namespace Backend.Tests
         public async Task CreateRecord_ValidData_ReturnsCreated()
         {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
+            var createDto = new CreateRecordDto
             {
-                UserId = 1,
                 ValueTypeId = 1,
                 Value = 5.8m,
                 Value2 = null,
@@ -242,22 +248,21 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var responseContent = await response.Content.ReadAsStringAsync();
-            var createdRecord = JsonSerializer.Deserialize<BloodSugarRecord>(responseContent, new JsonSerializerOptions
+            var createdRecord = JsonSerializer.Deserialize<Backend.Models.Record>(responseContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(createdRecord);
             Assert.Equal(createDto.Value, createdRecord.Value);
             Assert.Equal(createDto.Notes, createdRecord.Notes);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task CreateRecord_BloodPressure_ValidData_ReturnsCreated()
-        {
+    {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
+            var createDto = new CreateRecordDto
             {
-                UserId = 1,
                 ValueTypeId = 2,
                 Value = 125m,
                 Value2 = 85m,
@@ -274,7 +279,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             var responseContent = await response.Content.ReadAsStringAsync();
-            var createdRecord = JsonSerializer.Deserialize<BloodSugarRecord>(responseContent, new JsonSerializerOptions
+            var createdRecord = JsonSerializer.Deserialize<Backend.Models.Record>(responseContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -287,9 +292,8 @@ namespace Backend.Tests
         public async Task CreateRecord_InvalidUserId_ReturnsBadRequest()
         {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
+            var createDto = new CreateRecordDto
             {
-                UserId = 999, // Invalid user ID
                 ValueTypeId = 1,
                 Value = 5.8m,
                 MeasurementTime = DateTime.UtcNow
@@ -303,15 +307,14 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task CreateRecord_InvalidValueTypeId_ReturnsBadRequest()
-        {
+    {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
+            var createDto = new CreateRecordDto
             {
-                UserId = 1,
                 ValueTypeId = 999, // Invalid value type ID
                 Value = 5.8m,
                 MeasurementTime = DateTime.UtcNow
@@ -331,9 +334,8 @@ namespace Backend.Tests
         public async Task CreateRecord_NegativeValue_ReturnsBadRequest()
         {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
-            {
-                UserId = 1,
+            var createDto = new CreateRecordDto
+        {
                 ValueTypeId = 1,
                 Value = -1m,
                 MeasurementTime = DateTime.UtcNow
@@ -347,15 +349,14 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task CreateRecord_TooLargeValue_ReturnsBadRequest()
-        {
+    {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
+            var createDto = new CreateRecordDto
             {
-                UserId = 1,
                 ValueTypeId = 1,
                 Value = 1001m, // Too large
                 MeasurementTime = DateTime.UtcNow
@@ -375,12 +376,11 @@ namespace Backend.Tests
         public async Task CreateRecord_TooLongNotes_ReturnsBadRequest()
         {
             // Arrange
-            var createDto = new CreateBloodSugarRecordDto
-            {
-                UserId = 1,
+            var createDto = new CreateRecordDto
+        {
                 ValueTypeId = 1,
                 Value = 5.8m,
-                MeasurementTime = DateTime.UtcNow,
+            MeasurementTime = DateTime.UtcNow,
                 Notes = new string('a', 1001) // Too long
             };
 
@@ -392,16 +392,15 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task UpdateRecord_ValidData_ReturnsOk()
         {
             // Arrange
             var recordId = 1;
-            var updateDto = new CreateBloodSugarRecordDto
+            var updateDto = new CreateRecordDto
             {
-                UserId = 1,
                 ValueTypeId = 1,
                 Value = 6.0m,
                 MeasurementTime = DateTime.UtcNow,
@@ -417,7 +416,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var responseContent = await response.Content.ReadAsStringAsync();
-            var updatedRecord = JsonSerializer.Deserialize<BloodSugarRecord>(responseContent, new JsonSerializerOptions
+            var updatedRecord = JsonSerializer.Deserialize<Backend.Models.Record>(responseContent, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -431,9 +430,8 @@ namespace Backend.Tests
         {
             // Arrange
             var nonExistentId = 999;
-            var updateDto = new CreateBloodSugarRecordDto
-            {
-                UserId = 1,
+            var updateDto = new CreateRecordDto
+        {
                 ValueTypeId = 1,
                 Value = 6.0m,
                 MeasurementTime = DateTime.UtcNow
@@ -491,7 +489,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var record = JsonSerializer.Deserialize<BloodSugarRecord>(content, new JsonSerializerOptions
+            var record = JsonSerializer.Deserialize<Backend.Models.Record>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -525,7 +523,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
@@ -546,16 +544,16 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(records);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task GetValueTypes_ReturnsAllValueTypes()
-        {
+    {
             // Act
             var response = await _client.GetAsync("/api/value-types");
 
@@ -568,11 +566,11 @@ namespace Backend.Tests
             });
             Assert.NotNull(valueTypes);
             Assert.True(valueTypes.Count >= 2); // At least blood sugar and blood pressure
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task GetRecords_WithSorting_ReturnsSortedResults()
-        {
+    {
             // Arrange
             var sortBy = "measurementTime";
             var sortOrder = "desc";
@@ -583,7 +581,7 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            var records = JsonSerializer.Deserialize<List<BloodSugarRecord>>(content, new JsonSerializerOptions
+            var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });

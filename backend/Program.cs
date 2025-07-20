@@ -6,6 +6,9 @@ using Backend.Services;
 using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Authentication;
+using System.Text.Encodings.Web;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,145 +47,169 @@ oauthLogger.LogInformation("Google OAuth config - ClientId: {HasClientId}, Clien
     !string.IsNullOrEmpty(googleClientSecret), 
     builder.Environment.EnvironmentName);
 
-if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
+if (builder.Environment.IsEnvironment("Test"))
 {
-    builder.Services.AddAuthentication(options =>
+    // 避免重复注册
+    if (!builder.Services.Any(s => s.ServiceType == typeof(Microsoft.AspNetCore.Authentication.IAuthenticationService)))
     {
-        options.DefaultScheme = "Cookies";
-        options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-        options.DefaultSignInScheme = "Cookies";
-    })
-    .AddCookie("Cookies", options =>
-    {
-        options.Events.OnRedirectToLogin = context => {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning("OnRedirectToLogin triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
-            context.Response.StatusCode = 401;
-            return Task.CompletedTask;
-        };
-        options.Cookie.HttpOnly = true;
-        options.Cookie.IsEssential = true;
-        options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-        options.Cookie.SameSite = SameSiteMode.None;
-        options.Cookie.MaxAge = TimeSpan.FromHours(1);
-        options.Events.OnRedirectToAccessDenied = context => {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning("OnRedirectToAccessDenied triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
-            context.Response.StatusCode = 403;
-            return Task.CompletedTask;
-        };
-    })
-    .AddGoogle(options =>
-    {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
-        options.CallbackPath = "/api/auth/callback";
-        options.SaveTokens = true;
-        // Ensure correlation cookie is set correctly for local development
-        options.CorrelationCookie.SecurePolicy = builder.Environment.IsDevelopment()
-            ? CookieSecurePolicy.None
-            : CookieSecurePolicy.Always;
-        options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-        options.CorrelationCookie.HttpOnly = true;
-        options.CorrelationCookie.IsEssential = true;
-                
-        options.Events.OnRemoteFailure = context =>
-        {
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            var host = context.Request.Host.HasValue ? context.Request.Host.Value : "unknown";
-            var scheme = context.Request.Scheme;
-            var redirectUri = context.Request.Query["redirect_uri"].ToString();
-            logger.LogWarning("OAuth remote failure. Host: {Host}, Scheme: {Scheme}, RedirectUri: {RedirectUri}", host, scheme, redirectUri);
-            context.Response.Redirect("/login?error=oauth_failed");
-            context.HandleResponse();
-            return Task.CompletedTask;
-        };
-        options.Events.OnTicketReceived = async context =>
-        {
-            var userService = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-            var headers = context.HttpContext.Request.Headers.Select(h => $"{h.Key}: {h.Value}").ToList();
-            var userAgent = context.HttpContext.Request.Headers["User-Agent"].ToString();
-            var accept = context.HttpContext.Request.Headers["Accept"].ToString();
-            var xRequestedWith = context.HttpContext.Request.Headers["X-Requested-With"].ToString();
-            var referer = context.HttpContext.Request.Headers["Referer"].ToString();
-            logger.LogInformation("OAuth ticket received. Referer: {Referer}, User-Agent: {UserAgent}, Accept: {Accept}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", referer, userAgent, accept, xRequestedWith, string.Join(" | ", headers));
-            var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
-            var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-            // Do not redeclare logger; it is already defined above
+        builder.Services.AddAuthentication("Test")
+            .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
+    }
 
-            var claims = context.Principal != null ? context.Principal.Claims : Enumerable.Empty<Claim>();
-            var email = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
-            var name = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
-            var googleId = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
-            if (!string.IsNullOrEmpty(email))
-            {
-                var user = await userService.Users.FirstOrDefaultAsync(u => u.Email == email);
-                if (user == null)
-                {
-                    user = new Backend.Models.User { Email = email, Name = name ?? email, GoogleId = googleId };
-                    userService.Users.Add(user);
-                    await userService.SaveChangesAsync();
-                    logger.LogInformation("Created new user: {Email}", email);
-                }
-                else if (!string.IsNullOrEmpty(googleId) && user.GoogleId != googleId)
-                {
-                    user.GoogleId = googleId;
-                    if (!string.IsNullOrEmpty(name)) user.Name = name;
-                    await userService.SaveChangesAsync();
-                    logger.LogInformation("Updated existing user: {Email}", email);
-                }
-                
-                // Get remember me setting from OAuth properties
-                var rememberMe = context.Properties?.Items.ContainsKey("rememberMe") == true 
-                    && bool.TryParse(context.Properties.Items["rememberMe"], out var rm) && rm;
-                
-                // Generate JWT token
-                var token = jwtService.GenerateToken(user, rememberMe);
-                
-                // Set JWT token as HTTP-only cookie
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = !environment.IsDevelopment(),
-                    SameSite = SameSiteMode.Lax,
-                    MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
-                };
-                
-                context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
-                logger.LogInformation("OAuth callback successful for user: {Email}", email);
-            }
-            context.Response.Redirect("/dashboard");
-            context.HandleResponse();
-            return;
-        };
-        if (!builder.Environment.IsDevelopment())
-        {
-            options.Events.OnRedirectToAuthorizationEndpoint = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
-                // Replace 'http%3A%2F%2F' with 'https%3A%2F%2F' in the redirect_uri parameter for production
-                var googleUrl = context.RedirectUri.Replace("http%3A%2F%2F", "https%3A%2F%2F");
-                context.Response.Redirect(googleUrl);
-                logger.LogInformation("FORCED Google OAuth redirect to: {GoogleUrl}", googleUrl);
-                return Task.CompletedTask;
-            };
-        }
+    // 强制全局认证策略为Test
+    builder.Services.AddAuthorization(options =>
+    {
+        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder("Test")
+            .RequireAuthenticatedUser()
+            .Build();
     });
 }
 else
 {
-    builder.Services.AddAuthentication(options => { options.DefaultScheme = "Cookies"; }).AddCookie("Cookies");
+    // 原有Cookie/Google认证注册逻辑
+    if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
+    {
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultScheme = "Cookies";
+            options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = "Cookies";
+        })
+        .AddCookie("Cookies", options =>
+        {
+            options.Events.OnRedirectToLogin = context => {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning("OnRedirectToLogin triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            };
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+            options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.MaxAge = TimeSpan.FromHours(1);
+            options.Events.OnRedirectToAccessDenied = context => {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning("OnRedirectToAccessDenied triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
+                context.Response.StatusCode = 403;
+                return Task.CompletedTask;
+            };
+        })
+        .AddGoogle(options =>
+        {
+            options.ClientId = googleClientId;
+            options.ClientSecret = googleClientSecret;
+            options.CallbackPath = "/api/auth/callback";
+            options.SaveTokens = true;
+            // Ensure correlation cookie is set correctly for local development
+            options.CorrelationCookie.SecurePolicy = builder.Environment.IsDevelopment()
+                ? CookieSecurePolicy.None
+                : CookieSecurePolicy.Always;
+            options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+            options.CorrelationCookie.HttpOnly = true;
+            options.CorrelationCookie.IsEssential = true;
+                
+            options.Events.OnRemoteFailure = context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                var host = context.Request.Host.HasValue ? context.Request.Host.Value : "unknown";
+                var scheme = context.Request.Scheme;
+                var redirectUri = context.Request.Query["redirect_uri"].ToString();
+                logger.LogWarning("OAuth remote failure. Host: {Host}, Scheme: {Scheme}, RedirectUri: {RedirectUri}", host, scheme, redirectUri);
+                context.Response.Redirect("/login?error=oauth_failed");
+                context.HandleResponse();
+                return Task.CompletedTask;
+            };
+            options.Events.OnTicketReceived = async context =>
+            {
+                var userService = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                var headers = context.HttpContext.Request.Headers.Select(h => $"{h.Key}: {h.Value}").ToList();
+                var userAgent = context.HttpContext.Request.Headers["User-Agent"].ToString();
+                var accept = context.HttpContext.Request.Headers["Accept"].ToString();
+                var xRequestedWith = context.HttpContext.Request.Headers["X-Requested-With"].ToString();
+                var referer = context.HttpContext.Request.Headers["Referer"].ToString();
+                logger.LogInformation("OAuth ticket received. Referer: {Referer}, User-Agent: {UserAgent}, Accept: {Accept}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", referer, userAgent, accept, xRequestedWith, string.Join(" | ", headers));
+                var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
+                var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
+                // Do not redeclare logger; it is already defined above
+
+                var claims = context.Principal != null ? context.Principal.Claims : Enumerable.Empty<Claim>();
+                var email = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+                var name = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
+                var googleId = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                
+                if (!string.IsNullOrEmpty(email))
+                {
+                    var user = await userService.Users.FirstOrDefaultAsync(u => u.Email == email);
+                    if (user == null)
+                    {
+                        user = new Backend.Models.User { Email = email, Name = name ?? email, GoogleId = googleId };
+                        userService.Users.Add(user);
+                        await userService.SaveChangesAsync();
+                        logger.LogInformation("Created new user: {Email}", email);
+                    }
+                    else if (!string.IsNullOrEmpty(googleId) && user.GoogleId != googleId)
+                    {
+                        user.GoogleId = googleId;
+                        if (!string.IsNullOrEmpty(name)) user.Name = name;
+                        await userService.SaveChangesAsync();
+                        logger.LogInformation("Updated existing user: {Email}", email);
+                    }
+                    
+                    // Get remember me setting from OAuth properties
+                    var rememberMe = context.Properties?.Items.ContainsKey("rememberMe") == true 
+                        && bool.TryParse(context.Properties.Items["rememberMe"], out var rm) && rm;
+                    
+                    // Generate JWT token
+                    var token = jwtService.GenerateToken(user, rememberMe);
+                    
+                    // Set JWT token as HTTP-only cookie
+                    var cookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = !environment.IsDevelopment(),
+                        SameSite = SameSiteMode.Lax,
+                        MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
+                    };
+                    
+                    context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
+                    logger.LogInformation("OAuth callback successful for user: {Email}", email);
+                }
+                context.Response.Redirect("/dashboard");
+                context.HandleResponse();
+                return;
+            };
+            if (!builder.Environment.IsDevelopment())
+            {
+                options.Events.OnRedirectToAuthorizationEndpoint = context =>
+                {
+                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                    logger.LogInformation("BEFORE Google OAuth redirect URI set to: {RedirectUri}", context.RedirectUri);
+                    // Replace 'http%3A%2F%2F' with 'https%3A%2F%2F' in the redirect_uri parameter for production
+                    var googleUrl = context.RedirectUri.Replace("http%3A%2F%2F", "https%3A%2F%2F");
+                    context.Response.Redirect(googleUrl);
+                    logger.LogInformation("FORCED Google OAuth redirect to: {GoogleUrl}", googleUrl);
+                    return Task.CompletedTask;
+                };
+            }
+        });
+    }
+    else
+    {
+        builder.Services.AddAuthentication(options => { options.DefaultScheme = "Cookies"; }).AddCookie("Cookies");
+    }
 }
 
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (!string.IsNullOrEmpty(connectionString))
-    builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
-else
-    builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("BloodSugarHistoryDb"));
+var isTestEnv = builder.Environment.EnvironmentName == "Test";
+if (!isTestEnv) {
+    if (!string.IsNullOrEmpty(connectionString))
+        builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+    else
+        builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("BloodSugarHistoryDb"));
+}
 
 // Data Protection
 if (!builder.Environment.IsDevelopment())
@@ -235,7 +262,10 @@ startupLogger.LogInformation("Application starting up. Environment: {Environment
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.Migrate();
+    if (!app.Environment.IsEnvironment("Test"))
+    {
+        context.Database.Migrate();
+    }
 }
 
 // Middleware
@@ -308,3 +338,25 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+public partial class Program { }
+
+// TestAuthHandler实现
+public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+        : base(options, logger, encoder, clock) { }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        var claims = new[] {
+            new Claim(ClaimTypes.NameIdentifier, "1"),
+            new Claim(ClaimTypes.Name, "Test User"),
+            new Claim(ClaimTypes.Email, "test@example.com")
+        };
+        var identity = new ClaimsIdentity(claims, "Test");
+        var principal = new ClaimsPrincipal(identity);
+        var ticket = new AuthenticationTicket(principal, "Test");
+        return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+}

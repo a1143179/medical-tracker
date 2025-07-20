@@ -52,7 +52,7 @@ public class AuthControllerTests
             { "Jwt:Issuer", "test_issuer" },
             { "Jwt:Audience", "test_audience" }
         }).Build();
-        var realJwtService = new JwtService(jwtConfig, new Mock<ILogger<JwtService>>().Object);
+        var realJwtService = new JwtService(jwtConfig, new Mock<ILogger<JwtService>>().Object, _mockEnv.Object);
         var controller = new Backend.Controllers.AuthController(context, _mockLogger.Object, _mockConfig.Object, _mockEnv.Object, realJwtService);
         var user = new User { Id = 1, Email = "test@example.com", Name = "Test User" };
         context.Users.Add(user);
