@@ -131,6 +131,15 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
       : 0;
   }, [filteredRecords]);
+
+  // Memoize average value2 calculation for blood pressure
+  const averageValue2 = useMemo(() => {
+    if (!requiresTwoValues()) return null;
+    const recordsWithValue2 = filteredRecords.filter(record => record.value2 !== null && record.value2 !== undefined);
+    return recordsWithValue2.length > 0 
+      ? (recordsWithValue2.reduce((sum, record) => sum + record.value2, 0) / recordsWithValue2.length).toFixed(1)
+      : null;
+  }, [filteredRecords, requiresTwoValues]);
   
   // Memoize latest record
   const latestRecord = useMemo(() => {
@@ -545,7 +554,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               {t('latestReading')}
             </Typography>
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {latestRecord ? `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData')}
+              {latestRecord ? (
+                requiresTwoValues() && latestRecord.value2 ? (
+                  `${latestRecord.value}/${latestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )
+              ) : t('noData')}
             </Typography>
             {latestRecord && (
               <>
@@ -569,7 +584,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                {averageValue} {getSelectedValueType()?.unit || 'mmol/L'}
+                {requiresTwoValues() ? (
+                  `${averageValue}/${averageValue2 || 'N/A'} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${averageValue} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )}
               </Typography>
             </Box>
             {/* Move High/Low label below mmol/L */}
@@ -1005,8 +1024,14 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           {t('latestReading')}
                         </Typography>
                                     <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-              {latestRecord ? `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData')}
-            </Typography>
+                          {latestRecord ? (
+                            requiresTwoValues() && latestRecord.value2 ? (
+                              `${latestRecord.value}/${latestRecord.value2} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            ) : (
+                              `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )
+                          ) : t('noData')}
+                        </Typography>
                         {latestRecord && (
                           <>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -1030,7 +1055,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                            {averageValue} {getSelectedValueType()?.unit || 'mmol/L'}
+                            {requiresTwoValues() ? (
+                              // For blood pressure, show both systolic and diastolic averages
+                              `${averageValue}/${averageValue2 || 'N/A'} ${getSelectedValueType()?.unit || 'mmHg'}`
+                            ) : (
+                              `${averageValue} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )}
                           </Typography>
                         </Box>
                         {/* Move High/Low label below mmol/L */}
@@ -1102,7 +1132,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                      {record.value} {getSelectedValueType()?.unit || 'mmol/L'}
+                                      {requiresTwoValues() && record.value2 ? (
+                                        `${record.value}/${record.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                                      ) : (
+                                        `${record.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                                      )}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
@@ -1248,7 +1282,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         />
                         <TextField
                           fullWidth
-                          label={t('medicalRecordLabel')}
+                          label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                           type="text"
                           name="value"
                           value={currentRecord.value ?? ''}
@@ -1263,6 +1297,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             spellCheck: 'false'
                           }}
                         />
+                        {requiresTwoValues() && (
+                          <TextField
+                            fullWidth
+                            label={t('diastolicPressure')}
+                            type="text"
+                            name="value2"
+                            value={currentRecord.value2 ?? ''}
+                            onChange={handleInputChange}
+                            required
+                            margin="normal"
+                            inputProps={{
+                              inputMode: 'decimal',
+                              autoComplete: 'off',
+                              autoCorrect: 'off',
+                              autoCapitalize: 'off',
+                              spellCheck: 'false'
+                            }}
+                          />
+                        )}
                         <TextField
                           fullWidth
                           label={t('notesLabel')}
@@ -1325,7 +1378,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label="医疗数据 (Medical Data)"
+              label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
               type="text"
               name="value"
               value={currentRecord.value ?? ''}
@@ -1340,6 +1393,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 spellCheck: 'false'
               }}
             />
+            {requiresTwoValues() && (
+              <TextField
+                fullWidth
+                label={t('diastolicPressure')}
+                type="text"
+                name="value2"
+                value={currentRecord.value2 ?? ''}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false'
+                }}
+              />
+            )}
             <TextField
               fullWidth
               label={t('notesLabel')}
