@@ -98,9 +98,8 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        // Get token from Authorization header or cookie
-        var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") 
-                   ?? Request.Cookies["MedicalTracker.Auth.JWT"];
+        // Get token from cookie only
+        var token = Request.Cookies["MedicalTracker.Auth.JWT"];
         
         if (string.IsNullOrEmpty(token))
         {
@@ -133,9 +132,8 @@ public class AuthController : ControllerBase
     [HttpPut("preferred-value-type")]
     public async Task<IActionResult> UpdatePreferredValueType([FromBody] UpdatePreferredValueTypeDto dto)
     {
-        // Get token from Authorization header or cookie
-        var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") 
-                   ?? Request.Cookies["MedicalTracker.Auth.JWT"];
+        // Get token from cookie only
+        var token = Request.Cookies["MedicalTracker.Auth.JWT"];
         
         if (string.IsNullOrEmpty(token))
         {

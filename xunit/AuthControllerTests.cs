@@ -59,7 +59,8 @@ public class AuthControllerTests
         await context.SaveChangesAsync();
         var token = realJwtService.GenerateToken(user);
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Authorization"] = $"Bearer {token}";
+        httpContext.Request.Cookies = new Mock<IRequestCookieCollection>().Object;
+        Mock.Get(httpContext.Request.Cookies).Setup(x => x["MedicalTracker.Auth.JWT"]).Returns(token);
         controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
         var result = await controller.Me();
         var okResult = Assert.IsType<OkObjectResult>(result);

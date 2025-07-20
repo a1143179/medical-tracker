@@ -86,7 +86,7 @@ else
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
             options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.MaxAge = TimeSpan.FromHours(1);
             options.Events.OnRedirectToAccessDenied = context => {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();

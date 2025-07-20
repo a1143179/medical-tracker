@@ -71,7 +71,12 @@ const GoogleLogin = () => {
           alignItems: 'center',
         }}
       >
-        {/* 移除 Logo 区域，保留 Divider 和后续内容 */}
+        {/* Logo area with transparent background */}
+        <Box sx={{ width: '100%', bgcolor: 'transparent', display: 'flex', justifyContent: 'center', alignItems: 'center', py: { xs: 2, sm: 3 }, mb: 2, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+          <Box sx={{ width: 198, height: 50, bgcolor: 'transparent' }}>
+            <img src="/logo-blue.png" alt="Medical Tracker Logo" style={{ width: '198px', height: '50px', objectFit: 'contain' }} />
+          </Box>
+        </Box>
         <Divider sx={{ width: { xs: '90%', sm: '80%' }, mb: 3 }} />
         <Grid container spacing={4} sx={{ 
           width: '100%',
