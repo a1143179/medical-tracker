@@ -140,6 +140,22 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       ? (recordsWithValue2.reduce((sum, record) => sum + record.value2, 0) / recordsWithValue2.length).toFixed(1)
       : null;
   }, [filteredRecords, requiresTwoValues]);
+
+  // Memoize highest reading
+  const highestRecord = useMemo(() => {
+    if (filteredRecords.length === 0) return null;
+    return filteredRecords.reduce((max, record) => 
+      record.value > max.value ? record : max
+    );
+  }, [filteredRecords]);
+
+  // Memoize lowest reading
+  const lowestRecord = useMemo(() => {
+    if (filteredRecords.length === 0) return null;
+    return filteredRecords.reduce((min, record) => 
+      record.value < min.value ? record : min
+    );
+  }, [filteredRecords]);
   
   // Memoize latest record
   const latestRecord = useMemo(() => {
@@ -589,6 +605,65 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             )}
           </CardContent>
         </Card>
+        
+        <Card elevation={3}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {t('highestReading')}
+            </Typography>
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {highestRecord ? (
+                requiresTwoValues() && highestRecord.value2 ? (
+                  `${highestRecord.value}/${highestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${highestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )
+              ) : t('noData')}
+            </Typography>
+            {highestRecord && (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {formatDateTime(highestRecord.measurementTime)}
+                </Typography>
+                <Chip 
+                  label={getBloodSugarStatus(highestRecord.value).label}
+                  color={getBloodSugarStatus(highestRecord.value).color}
+                  size="medium"
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+        
+        <Card elevation={3}>
+          <CardContent sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {t('lowestReading')}
+            </Typography>
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {lowestRecord ? (
+                requiresTwoValues() && lowestRecord.value2 ? (
+                  `${lowestRecord.value}/${lowestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${lowestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )
+              ) : t('noData')}
+            </Typography>
+            {lowestRecord && (
+              <>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {formatDateTime(lowestRecord.measurementTime)}
+                </Typography>
+                <Chip 
+                  label={getBloodSugarStatus(lowestRecord.value).label}
+                  color={getBloodSugarStatus(lowestRecord.value).color}
+                  size="medium"
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
+        
         <Card elevation={3}>
           <CardContent sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -1105,6 +1180,67 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         )}
                       </CardContent>
                     </Card>
+                    
+                    <Card elevation={3} sx={{ flex: 1 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('highestReading')}
+                        </Typography>
+                        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                          {highestRecord ? (
+                            requiresTwoValues() && highestRecord.value2 ? (
+                              `${highestRecord.value}/${highestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                            ) : (
+                              `${highestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )
+                          ) : t('noData')}
+                        </Typography>
+                        {highestRecord && (
+                          <>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                              {formatDateTime(highestRecord.measurementTime)}
+                            </Typography>
+                            <Chip 
+                              label={getBloodSugarStatus(highestRecord.value).label}
+                              color={getBloodSugarStatus(highestRecord.value).color}
+                              size="small"
+                              sx={{ mt: 0.5 }}
+                            />
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card elevation={3} sx={{ flex: 1 }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          {t('lowestReading')}
+                        </Typography>
+                        <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
+                          {lowestRecord ? (
+                            requiresTwoValues() && lowestRecord.value2 ? (
+                              `${lowestRecord.value}/${lowestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                            ) : (
+                              `${lowestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )
+                          ) : t('noData')}
+                        </Typography>
+                        {lowestRecord && (
+                          <>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                              {formatDateTime(lowestRecord.measurementTime)}
+                            </Typography>
+                            <Chip 
+                              label={getBloodSugarStatus(lowestRecord.value).label}
+                              color={getBloodSugarStatus(lowestRecord.value).color}
+                              size="small"
+                              sx={{ mt: 0.5 }}
+                            />
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
                     <Card elevation={3} sx={{ flex: 1 }}>
                       <CardContent sx={{ p: 2 }}>
                         <Typography variant="body2" color="text.secondary" gutterBottom>

@@ -124,6 +124,8 @@ export const LanguageProvider = ({ children }) => {
       
       // Dashboard Cards
       latestReading: 'Latest Reading',
+      highestReading: 'Highest Reading',
+      lowestReading: 'Lowest Reading',
       averageValue: 'Average Value',
       totalRecords: 'Total Records',
       noData: 'No data',
@@ -254,6 +256,8 @@ export const LanguageProvider = ({ children }) => {
       
       // Dashboard Cards
       latestReading: '最新读数',
+      highestReading: '最高读数',
+      lowestReading: '最低读数',
       averageValue: '平均值',
       totalRecords: '总记录数',
       noData: '无数据',
