@@ -450,7 +450,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const sortedRecords = [...filteredRecords].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
   const chartData = sortedRecords.map(record => ({
     date: formatDateTime(record.measurementTime),
-    value: record.value
+    value: record.value,
+    value2: record.value2
   }));
 
   // Calculate 24-hour average pattern (across filtered records)
@@ -459,8 +460,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     
     // Group all records by hour of day (0-23)
     const hourlyGroups = {};
+    const hourlyGroups2 = {};
     for (let hour = 0; hour < 24; hour++) {
       hourlyGroups[hour] = [];
+      hourlyGroups2[hour] = [];
     }
     
     // Categorize all records by hour
@@ -468,26 +471,35 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       const recordDate = new Date(record.measurementTime);
       const hour = recordDate.getHours();
       hourlyGroups[hour].push(record.value);
+      if (record.value2 !== null && record.value2 !== undefined) {
+        hourlyGroups2[hour].push(record.value2);
+      }
     });
     
     // Calculate average for each hour
     const hourlyAverages = [];
     for (let hour = 0; hour < 24; hour++) {
       const readings = hourlyGroups[hour];
+      const readings2 = hourlyGroups2[hour];
       if (readings.length > 0) {
         const average = readings.reduce((sum, value) => sum + value, 0) / readings.length;
+        const average2 = readings2.length > 0 
+          ? readings2.reduce((sum, value) => sum + value, 0) / readings2.length 
+          : null;
         hourlyAverages.push({
           hour: hour,
           value: parseFloat(average.toFixed(1)),
+          value2: average2 ? parseFloat(average2.toFixed(1)) : null,
           count: readings.length
         });
       } else {
         // No readings for this hour
         hourlyAverages.push({
           hour: hour,
-                  value: null,
-        count: 0
-      });
+          value: null,
+          value2: null,
+          count: 0
+        });
       }
     }
     
@@ -495,6 +507,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     hourlyAverages.push({
       hour: 24,
       value: hourlyAverages[0]?.value || null,
+      value2: hourlyAverages[0]?.value2 || null,
       count: hourlyAverages[0]?.count || 0
     });
     
@@ -636,14 +649,41 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" angle={-45} textAnchor="end" height={60} />
                 <YAxis domain={[0, 'dataMax + 2']} />
-                <RechartsTooltip />
+                <RechartsTooltip 
+                  formatter={(value, name, props) => {
+                    if (name === 'value') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                        requiresTwoValues() ? t('systolicPressure') : t('average')
+                      ];
+                    }
+                    if (name === 'value2') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                        t('diastolicPressure')
+                      ];
+                    }
+                    return [value, name];
+                  }}
+                />
                 <Line 
                   type="monotone" 
                   dataKey="value" 
                   stroke="#1976d2" 
                   strokeWidth={3}
                   dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                  name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                 />
+                {requiresTwoValues() && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="value2" 
+                    stroke="#ff6b35" 
+                    strokeWidth={3}
+                    dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
+                    name={t('diastolicPressure')}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </Paper>
@@ -669,7 +709,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                     if (name === 'value') {
                       return [
                         value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
-                        t('average')
+                        requiresTwoValues() ? t('systolicPressure') : t('average')
+                      ];
+                    }
+                    if (name === 'value2') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                        t('diastolicPressure')
                       ];
                     }
                     return [value, name];
@@ -683,7 +729,19 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   strokeWidth={3}
                   dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
                   connectNulls={true}
+                  name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                 />
+                {requiresTwoValues() && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="value2" 
+                    stroke="#1976d2" 
+                    strokeWidth={3}
+                    dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                    connectNulls={true}
+                    name={t('diastolicPressure')}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </Paper>
@@ -1198,14 +1256,41 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="date" />
                               <YAxis domain={[0, 'dataMax + 2']} />
-                              <RechartsTooltip />
+                              <RechartsTooltip 
+                                formatter={(value, name, props) => {
+                                  if (name === 'value') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                                      requiresTwoValues() ? t('systolicPressure') : t('average')
+                                    ];
+                                  }
+                                  if (name === 'value2') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                                      t('diastolicPressure')
+                                    ];
+                                  }
+                                  return [value, name];
+                                }}
+                              />
                               <Line 
                                 type="monotone" 
                                 dataKey="value" 
                                 stroke="#1976d2" 
                                 strokeWidth={3}
                                 dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                                name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                               />
+                              {requiresTwoValues() && (
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="value2" 
+                                  stroke="#ff6b35" 
+                                  strokeWidth={3}
+                                  dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
+                                  name={t('diastolicPressure')}
+                                />
+                              )}
                             </LineChart>
                           </Paper>
                           <Paper elevation={3} sx={{ p: 2 }}>
@@ -1223,18 +1308,24 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 tickFormatter={(value) => `${value}:00`}
                               />
                               <YAxis domain={[0, 'dataMax + 2']} />
-                                              <RechartsTooltip 
-                  formatter={(value, name, props) => {
-                    if (name === 'value') {
-                      return [
-                        value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
-                        t('average')
-                      ];
-                    }
-                    return [value, name];
-                  }}
-                  labelFormatter={(label) => `${label}:00`}
-                />
+                              <RechartsTooltip 
+                                formatter={(value, name, props) => {
+                                  if (name === 'value') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                                      requiresTwoValues() ? t('systolicPressure') : t('average')
+                                    ];
+                                  }
+                                  if (name === 'value2') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                                      t('diastolicPressure')
+                                    ];
+                                  }
+                                  return [value, name];
+                                }}
+                                labelFormatter={(label) => `${label}:00`}
+                              />
                               <Line 
                                 type="monotone" 
                                 dataKey="value" 
@@ -1242,7 +1333,19 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 strokeWidth={3}
                                 dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
                                 connectNulls={true}
+                                name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                               />
+                              {requiresTwoValues() && (
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="value2" 
+                                  stroke="#1976d2" 
+                                  strokeWidth={3}
+                                  dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                                  connectNulls={true}
+                                  name={t('diastolicPressure')}
+                                />
+                              )}
                             </LineChart>
                           </Paper>
                         </Box>
