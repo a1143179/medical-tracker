@@ -103,30 +103,42 @@ public class AuthController : ControllerBase
         
         if (string.IsNullOrEmpty(token))
         {
+            _logger.LogWarning("No JWT token found in cookies");
             return Unauthorized();
         }
 
-        var email = _jwtService.GetUserEmailFromToken(token);
-        if (string.IsNullOrEmpty(email))
+        try
         {
+            var email = _jwtService.GetUserEmailFromToken(token);
+            if (string.IsNullOrEmpty(email))
+            {
+                _logger.LogWarning("Invalid JWT token - no email found");
+                return Unauthorized();
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for email: {Email}", email);
+                return Unauthorized();
+            }
+
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                PreferredValueTypeId = user.PreferredValueTypeId
+            };
+
+            _logger.LogInformation("Successfully authenticated user: {Email}", email);
+            return Ok(userDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing JWT token");
             return Unauthorized();
         }
-
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
-
-        var userDto = new UserDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            Name = user.Name,
-            PreferredValueTypeId = user.PreferredValueTypeId
-        };
-
-        return Ok(userDto);
     }
 
     [HttpPut("preferred-value-type")]
