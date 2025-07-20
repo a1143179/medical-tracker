@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import GoogleIcon from '@mui/icons-material/Google';
-import { Box, Grid, Paper, Typography, Button, useTheme, useMediaQuery, Divider, Stack, Avatar, CircularProgress, Checkbox, FormControlLabel } from '@mui/material';
+import { Box, Grid, Paper, Typography, Button, useTheme, useMediaQuery, Divider, Stack, CircularProgress, Checkbox, FormControlLabel } from '@mui/material';
 
 const GoogleLogin = () => {
   const { loginWithGoogle } = useAuth();
@@ -72,20 +72,12 @@ const GoogleLogin = () => {
         }}
       >
         <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%', mb: 2, mt: 2, justifyContent: 'center' }}>
-          {!isMobile && (
-            <Avatar sx={{ width: 56, height: 56 }}>
-              <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </Avatar>
-          )}
-          <Box>
-            <Typography variant="h4" fontWeight={700} color="text.primary" gutterBottom>
-              {t('appTitle')}
-            </Typography>
-            {!isMobile && (
-              <Typography variant="subtitle1" color="text.secondary">
-                {t('appDescription')}
-              </Typography>
-            )}
+          <Box sx={{ 
+            width: { xs: 100, sm: 120, md: 150, lg: 200 },
+            height: { xs: 33, sm: 40, md: 50, lg: 67 },
+            bgcolor: 'transparent'
+          }}>
+            <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </Box>
         </Stack>
         <Divider sx={{ width: { xs: '90%', sm: '80%' }, mb: 3 }} />

@@ -81,18 +81,17 @@ const Header = ({ onMobileNavigate }) => {
               <MenuIcon />
             </IconButton>
 
-            {/* Logo and Page Title */}
+            {/* Logo Only */}
             <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-              <Avatar sx={{ width: 32, height: 32, mr: 1, display: { xs: 'none', md: 'flex' } }}>
-                <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              </Avatar>
-              <Typography variant="h6" component="div" sx={{ 
-                flexGrow: 1, 
-                display: { xs: 'none', md: 'block' },
-                fontWeight: 'bold'
+              <Box sx={{ 
+                width: { xs: 120, sm: 130, md: 150, lg: 180 },
+                height: { xs: 40, sm: 43, md: 50, lg: 60 },
+                mr: 1, 
+                display: { xs: 'flex', md: 'flex' },
+                bgcolor: 'transparent'
               }}>
-                {t('appTitle')}
-              </Typography>
+                <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </Box>
             </Box>
             
             {/* Language Selector and Profile Icon Container */}

@@ -63,7 +63,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   
   const [records, setRecords] = useState([]);
   const [valueTypes, setValueTypes] = useState([]);
-  const [selectedValueType, setSelectedValueType] = useState(user?.preferredValueTypeId || 1); // Use user's preferred type or default to Blood Sugar
+  const [selectedValueType, setSelectedValueType] = useState(''); // Initialize as empty string
   const [isEditing, setIsEditing] = useState(false);
   const [currentRecord, setCurrentRecord] = useState({ 
     id: null, 
@@ -79,7 +79,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     value: '', 
     value2: '', // Second value for blood pressure
     notes: '',
-    valueTypeId: 1
+    valueTypeId: ''
   });
   const [openDialog, setOpenDialog] = useState(false);
   const [page, setPage] = useState(0);
@@ -245,12 +245,22 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     }
   }, [user?.id, fetchRecords]);
 
+  // Set default value type when valueTypes are loaded
+  useEffect(() => {
+    if (valueTypes.length > 0 && !selectedValueType) {
+      const defaultType = user?.preferredValueTypeId || valueTypes[0]?.id;
+      if (defaultType) {
+        setSelectedValueType(defaultType);
+      }
+    }
+  }, [valueTypes, selectedValueType, user?.preferredValueTypeId]);
+
   // Sync selected value type with user's preferred type when user changes
   useEffect(() => {
-    if (user?.preferredValueTypeId && user.preferredValueTypeId !== selectedValueType) {
+    if (user?.preferredValueTypeId && user.preferredValueTypeId !== selectedValueType && valueTypes.length > 0) {
       setSelectedValueType(user.preferredValueTypeId);
     }
-  }, [user?.preferredValueTypeId, selectedValueType]);
+  }, [user?.preferredValueTypeId, selectedValueType, valueTypes.length]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
