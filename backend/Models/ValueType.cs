@@ -18,6 +18,13 @@ public class MedicalValueType
     [MaxLength(20)]
     public string Unit { get; set; } = string.Empty;
     
+    // Second unit for measurements that need two values (e.g., blood pressure)
+    [MaxLength(20)]
+    public string? Unit2 { get; set; }
+    
+    // Indicates if this value type requires two values
+    public bool RequiresTwoValues { get; set; } = false;
+    
     public bool IsActive { get; set; } = true;
     
     // Navigation property - ignore in JSON to prevent circular reference

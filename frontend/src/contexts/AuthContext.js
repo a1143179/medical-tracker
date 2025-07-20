@@ -43,8 +43,34 @@ export function AuthProvider({ children }) {
     window.location.href = '/';
   };
 
+  const updatePreferredValueType = async (valueTypeId) => {
+    try {
+      const response = await fetch('/api/auth/preferred-value-type', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ preferredValueTypeId: valueTypeId })
+      });
+
+      if (response.ok) {
+        // Update the user state with the new preferred value type
+        setUser(prevUser => ({
+          ...prevUser,
+          preferredValueTypeId: valueTypeId
+        }));
+        return true;
+      } else {
+        console.error('Failed to update preferred value type');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating preferred value type:', error);
+      return false;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, updatePreferredValueType }}>
       {children}
     </AuthContext.Provider>
   );

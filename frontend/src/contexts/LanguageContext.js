@@ -166,6 +166,8 @@ export const LanguageProvider = ({ children }) => {
       update: 'Update',
       addRecordButton: 'Add New Record',
       medicalValueTypeLabel: 'Medical Value Type',
+      diastolicPressure: 'Diastolic Pressure',
+      systolicPressure: 'Systolic Pressure',
       
       // Status Labels
       low: 'Low',
@@ -294,6 +296,8 @@ export const LanguageProvider = ({ children }) => {
       update: '更新',
       addRecordButton: '添加新记录',
       medicalValueTypeLabel: '医疗数据类型',
+      diastolicPressure: '舒张压',
+      systolicPressure: '收缩压',
       
       // Status Labels
       low: '低',

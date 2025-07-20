@@ -56,14 +56,14 @@ import {
 const API_URL = '/api/records';
 
 function Dashboard({ mobilePage, onMobilePageChange }) {
-  const { user } = useAuth();
+  const { user, updatePreferredValueType } = useAuth();
   const { t, language } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const [records, setRecords] = useState([]);
   const [valueTypes, setValueTypes] = useState([]);
-  const [selectedValueType, setSelectedValueType] = useState(1); // Default to Blood Sugar
+  const [selectedValueType, setSelectedValueType] = useState(user?.preferredValueTypeId || 1); // Use user's preferred type or default to Blood Sugar
   const [isEditing, setIsEditing] = useState(false);
   const [currentRecord, setCurrentRecord] = useState({ 
     id: null, 
@@ -77,6 +77,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     })(), 
     value: '', 
+    value2: '', // Second value for blood pressure
     notes: '',
     valueTypeId: 1
   });
@@ -101,6 +102,21 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const getSelectedValueType = useCallback(() => {
     return selectedValueTypeData;
   }, [selectedValueTypeData]);
+
+  // Function to handle value type change
+  const handleValueTypeChange = async (newValueType) => {
+    setSelectedValueType(newValueType);
+    
+    // Save to database if user is authenticated
+    if (user?.id) {
+      await updatePreferredValueType(newValueType);
+    }
+  };
+  
+  // Function to check if current value type requires two values
+  const requiresTwoValues = useCallback(() => {
+    return selectedValueTypeData?.requiresTwoValues || false;
+  }, [selectedValueTypeData]);
   
   // Memoize filtered records to prevent unnecessary re-renders
   const filteredRecords = useMemo(() => {
@@ -115,6 +131,15 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       ? (filteredRecords.reduce((sum, record) => sum + record.value, 0) / filteredRecords.length).toFixed(1)
       : 0;
   }, [filteredRecords]);
+
+  // Memoize average value2 calculation for blood pressure
+  const averageValue2 = useMemo(() => {
+    if (!requiresTwoValues()) return null;
+    const recordsWithValue2 = filteredRecords.filter(record => record.value2 !== null && record.value2 !== undefined);
+    return recordsWithValue2.length > 0 
+      ? (recordsWithValue2.reduce((sum, record) => sum + record.value2, 0) / recordsWithValue2.length).toFixed(1)
+      : null;
+  }, [filteredRecords, requiresTwoValues]);
   
   // Memoize latest record
   const latestRecord = useMemo(() => {
@@ -204,6 +229,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     }
   }, [user?.id, fetchRecords]);
 
+  // Sync selected value type with user's preferred type when user changes
+  useEffect(() => {
+    if (user?.preferredValueTypeId && user.preferredValueTypeId !== selectedValueType) {
+      setSelectedValueType(user.preferredValueTypeId);
+    }
+  }, [user?.preferredValueTypeId, selectedValueType]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     // Always store as string to preserve decimals as typed and prevent focus loss
@@ -226,6 +258,16 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         return;
       }
 
+      // Validate second value if required
+      let value2 = null;
+      if (requiresTwoValues() && currentRecord.value2) {
+        value2 = parseFloat(currentRecord.value2);
+        if (isNaN(value2) || value2 < 0.1 || value2 > 1000) {
+          showMessage('Second value must be between 0.1 and 1000', 'error');
+          return;
+        }
+      }
+
       if (currentRecord.notes && currentRecord.notes.length > 1000) {
         showMessage('Notes cannot exceed 1000 characters', 'error');
         return;
@@ -239,7 +281,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value,
-            valueTypeId: currentRecord.valueTypeId,
+            value2: value2,
+            valueTypeId: selectedValueType, // Use current selected value type
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -260,7 +303,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           body: JSON.stringify({ 
             ...currentRecord, 
             value: value,
-            valueTypeId: currentRecord.valueTypeId,
+            value2: value2,
+            valueTypeId: selectedValueType, // Use current selected value type
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
         });
@@ -297,7 +341,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setCurrentRecord({ 
       ...record, 
       measurementTime: localDateTime,
-      value: record.value !== undefined && record.value !== null ? String(record.value) : ''
+      value: record.value !== undefined && record.value !== null ? String(record.value) : '',
+      value2: record.value2 !== undefined && record.value2 !== null ? String(record.value2) : ''
     });
     setOpenDialog(true);
     if (isMobile) {
@@ -336,8 +381,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       id: null, 
       measurementTime: localDateTime, 
       value: '', 
+      value2: '', // Reset second value
       notes: '',
-      valueTypeId: selectedValueType
+      valueTypeId: selectedValueType // Use current selected value type
     });
     setOpenDialog(false);
   };
@@ -404,7 +450,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const sortedRecords = [...filteredRecords].sort((a, b) => new Date(a.measurementTime) - new Date(b.measurementTime));
   const chartData = sortedRecords.map(record => ({
     date: formatDateTime(record.measurementTime),
-    value: record.value
+    value: record.value,
+    value2: record.value2
   }));
 
   // Calculate 24-hour average pattern (across filtered records)
@@ -413,8 +460,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     
     // Group all records by hour of day (0-23)
     const hourlyGroups = {};
+    const hourlyGroups2 = {};
     for (let hour = 0; hour < 24; hour++) {
       hourlyGroups[hour] = [];
+      hourlyGroups2[hour] = [];
     }
     
     // Categorize all records by hour
@@ -422,26 +471,35 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       const recordDate = new Date(record.measurementTime);
       const hour = recordDate.getHours();
       hourlyGroups[hour].push(record.value);
+      if (record.value2 !== null && record.value2 !== undefined) {
+        hourlyGroups2[hour].push(record.value2);
+      }
     });
     
     // Calculate average for each hour
     const hourlyAverages = [];
     for (let hour = 0; hour < 24; hour++) {
       const readings = hourlyGroups[hour];
+      const readings2 = hourlyGroups2[hour];
       if (readings.length > 0) {
         const average = readings.reduce((sum, value) => sum + value, 0) / readings.length;
+        const average2 = readings2.length > 0 
+          ? readings2.reduce((sum, value) => sum + value, 0) / readings2.length 
+          : null;
         hourlyAverages.push({
           hour: hour,
           value: parseFloat(average.toFixed(1)),
+          value2: average2 ? parseFloat(average2.toFixed(1)) : null,
           count: readings.length
         });
       } else {
         // No readings for this hour
         hourlyAverages.push({
           hour: hour,
-                  value: null,
-        count: 0
-      });
+          value: null,
+          value2: null,
+          count: 0
+        });
       }
     }
     
@@ -449,6 +507,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     hourlyAverages.push({
       hour: 24,
       value: hourlyAverages[0]?.value || null,
+      value2: hourlyAverages[0]?.value2 || null,
       count: hourlyAverages[0]?.count || 0
     });
     
@@ -470,7 +529,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             <FormControl fullWidth size="small">
               <Select
                 value={selectedValueType}
-                onChange={(e) => setSelectedValueType(e.target.value)}
+                onChange={(e) => handleValueTypeChange(e.target.value)}
                 displayEmpty
                 sx={{ mt: 1 }}
                 MenuProps={{
@@ -508,7 +567,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               {t('latestReading')}
             </Typography>
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold', mb: 1 }}>
-              {latestRecord ? `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData')}
+              {latestRecord ? (
+                requiresTwoValues() && latestRecord.value2 ? (
+                  `${latestRecord.value}/${latestRecord.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )
+              ) : t('noData')}
             </Typography>
             {latestRecord && (
               <>
@@ -532,7 +597,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                {averageValue} {getSelectedValueType()?.unit || 'mmol/L'}
+                {requiresTwoValues() ? (
+                  `${averageValue}/${averageValue2 || 'N/A'} ${getSelectedValueType()?.unit || 'mmHg'}`
+                ) : (
+                  `${averageValue} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                )}
               </Typography>
             </Box>
             {/* Move High/Low label below mmol/L */}
@@ -580,14 +649,41 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" angle={-45} textAnchor="end" height={60} />
                 <YAxis domain={[0, 'dataMax + 2']} />
-                <RechartsTooltip />
+                <RechartsTooltip 
+                  formatter={(value, name, props) => {
+                    if (name === 'value') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                        requiresTwoValues() ? t('systolicPressure') : t('average')
+                      ];
+                    }
+                    if (name === 'value2') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                        t('diastolicPressure')
+                      ];
+                    }
+                    return [value, name];
+                  }}
+                />
                 <Line 
                   type="monotone" 
                   dataKey="value" 
                   stroke="#1976d2" 
                   strokeWidth={3}
                   dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                  name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                 />
+                {requiresTwoValues() && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="value2" 
+                    stroke="#ff6b35" 
+                    strokeWidth={3}
+                    dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
+                    name={t('diastolicPressure')}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </Paper>
@@ -613,7 +709,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                     if (name === 'value') {
                       return [
                         value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
-                        t('average')
+                        requiresTwoValues() ? t('systolicPressure') : t('average')
+                      ];
+                    }
+                    if (name === 'value2') {
+                      return [
+                        value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                        t('diastolicPressure')
                       ];
                     }
                     return [value, name];
@@ -627,7 +729,19 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   strokeWidth={3}
                   dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
                   connectNulls={true}
+                  name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                 />
+                {requiresTwoValues() && (
+                  <Line 
+                    type="monotone" 
+                    dataKey="value2" 
+                    stroke="#1976d2" 
+                    strokeWidth={3}
+                    dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                    connectNulls={true}
+                    name={t('diastolicPressure')}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </Paper>
@@ -659,40 +773,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         <Box sx={{ px: 1 }}>
           <Paper elevation={3} sx={{ p: 2 }}>
             <Box component="form" onSubmit={handleSubmit}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel id="mobile-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
-                <Select
-                  labelId="mobile-value-type-label"
-                  value={currentRecord.valueTypeId}
-                  label={t('medicalValueTypeLabel')}
-                  name="valueTypeId"
-                  onChange={handleInputChange}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { 
-                        maxHeight: 200
-                      }
-                    },
-                    anchorOrigin: {
-                      vertical: 'bottom',
-                      horizontal: 'left',
-                    },
-                    transformOrigin: {
-                      vertical: 'top',
-                      horizontal: 'left',
-                    },
-                    disableScrollLock: true,
-                    keepMounted: false,
-                    getContentAnchorEl: null
-                  }}
-                >
-                  {valueTypes.map((valueType) => (
-                    <MenuItem key={valueType.id} value={valueType.id}>
-                      {getLocalizedValueTypeName(valueType)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
               
               <TextField
                 fullWidth
@@ -712,7 +792,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
               />
               <TextField
                 fullWidth
-                label={medicalRecordLabel}
+                label={requiresTwoValues() ? t('systolicPressure') : medicalRecordLabel}
                 type="text"
                 name="value"
                 value={valueValue}
@@ -727,6 +807,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   spellCheck: 'false',
                 }}
               />
+              {requiresTwoValues() && (
+                <TextField
+                  fullWidth
+                  label={t('diastolicPressure')}
+                  type="text"
+                  name="value2"
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
+                  required
+                  margin="normal"
+                  inputProps={{
+                    inputMode: 'decimal',
+                    autoComplete: 'off',
+                    autoCorrect: 'off',
+                    autoCapitalize: 'off',
+                    spellCheck: 'false',
+                  }}
+                />
+              )}
               <TextField
                 fullWidth
                 label={t('notesLabel')}
@@ -825,7 +924,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
               <TextField
                 fullWidth
-                label={t('medicalRecordLabel')}
+                label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                 type="text"
                 name="value"
                 value={currentRecord.value ?? ''}
@@ -840,6 +939,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   spellCheck: 'false',
                 }}
               />
+              {requiresTwoValues() && (
+                <TextField
+                  fullWidth
+                  label={t('diastolicPressure')}
+                  type="text"
+                  name="value2"
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
+                  required
+                  margin="normal"
+                  inputProps={{
+                    inputMode: 'decimal',
+                    autoComplete: 'off',
+                    autoCorrect: 'off',
+                    autoCapitalize: 'off',
+                    spellCheck: 'false',
+                  }}
+                />
+              )}
             <TextField
               fullWidth
               label={t('notesLabel')}
@@ -926,7 +1044,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         <FormControl fullWidth size="small">
                           <Select
                             value={selectedValueType}
-                            onChange={(e) => setSelectedValueType(e.target.value)}
+                            onChange={(e) => handleValueTypeChange(e.target.value)}
                             displayEmpty
                             sx={{ mt: 1 }}
                             MenuProps={{
@@ -964,8 +1082,14 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                           {t('latestReading')}
                         </Typography>
                                     <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-              {latestRecord ? `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData')}
-            </Typography>
+                          {latestRecord ? (
+                            requiresTwoValues() && latestRecord.value2 ? (
+                              `${latestRecord.value}/${latestRecord.value2} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            ) : (
+                              `${latestRecord.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )
+                          ) : t('noData')}
+                        </Typography>
                         {latestRecord && (
                           <>
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -989,7 +1113,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="h5" component="div" sx={{ fontWeight: 'bold' }}>
-                            {averageValue} {getSelectedValueType()?.unit || 'mmol/L'}
+                            {requiresTwoValues() ? (
+                              // For blood pressure, show both systolic and diastolic averages
+                              `${averageValue}/${averageValue2 || 'N/A'} ${getSelectedValueType()?.unit || 'mmHg'}`
+                            ) : (
+                              `${averageValue} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                            )}
                           </Typography>
                         </Box>
                         {/* Move High/Low label below mmol/L */}
@@ -1061,7 +1190,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                      {record.value} {getSelectedValueType()?.unit || 'mmol/L'}
+                                      {requiresTwoValues() && record.value2 ? (
+                                        `${record.value}/${record.value2} ${getSelectedValueType()?.unit || 'mmHg'}`
+                                      ) : (
+                                        `${record.value} ${getSelectedValueType()?.unit || 'mmol/L'}`
+                                      )}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
@@ -1123,14 +1256,41 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                               <CartesianGrid strokeDasharray="3 3" />
                               <XAxis dataKey="date" />
                               <YAxis domain={[0, 'dataMax + 2']} />
-                              <RechartsTooltip />
+                              <RechartsTooltip 
+                                formatter={(value, name, props) => {
+                                  if (name === 'value') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                                      requiresTwoValues() ? t('systolicPressure') : t('average')
+                                    ];
+                                  }
+                                  if (name === 'value2') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                                      t('diastolicPressure')
+                                    ];
+                                  }
+                                  return [value, name];
+                                }}
+                              />
                               <Line 
                                 type="monotone" 
                                 dataKey="value" 
                                 stroke="#1976d2" 
                                 strokeWidth={3}
                                 dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                                name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                               />
+                              {requiresTwoValues() && (
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="value2" 
+                                  stroke="#ff6b35" 
+                                  strokeWidth={3}
+                                  dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
+                                  name={t('diastolicPressure')}
+                                />
+                              )}
                             </LineChart>
                           </Paper>
                           <Paper elevation={3} sx={{ p: 2 }}>
@@ -1148,18 +1308,24 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 tickFormatter={(value) => `${value}:00`}
                               />
                               <YAxis domain={[0, 'dataMax + 2']} />
-                                              <RechartsTooltip 
-                  formatter={(value, name, props) => {
-                    if (name === 'value') {
-                      return [
-                        value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
-                        t('average')
-                      ];
-                    }
-                    return [value, name];
-                  }}
-                  labelFormatter={(label) => `${label}:00`}
-                />
+                              <RechartsTooltip 
+                                formatter={(value, name, props) => {
+                                  if (name === 'value') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit || 'mmol/L'}` : t('noData'), 
+                                      requiresTwoValues() ? t('systolicPressure') : t('average')
+                                    ];
+                                  }
+                                  if (name === 'value2') {
+                                    return [
+                                      value ? `${value} ${getSelectedValueType()?.unit2 || 'mmHg'}` : t('noData'), 
+                                      t('diastolicPressure')
+                                    ];
+                                  }
+                                  return [value, name];
+                                }}
+                                labelFormatter={(label) => `${label}:00`}
+                              />
                               <Line 
                                 type="monotone" 
                                 dataKey="value" 
@@ -1167,7 +1333,19 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                 strokeWidth={3}
                                 dot={{ fill: '#ff6b35', strokeWidth: 2, r: 4 }}
                                 connectNulls={true}
+                                name={requiresTwoValues() ? t('systolicPressure') : t('average')}
                               />
+                              {requiresTwoValues() && (
+                                <Line 
+                                  type="monotone" 
+                                  dataKey="value2" 
+                                  stroke="#1976d2" 
+                                  strokeWidth={3}
+                                  dot={{ fill: '#1976d2', strokeWidth: 2, r: 4 }}
+                                  connectNulls={true}
+                                  name={t('diastolicPressure')}
+                                />
+                              )}
                             </LineChart>
                           </Paper>
                         </Box>
@@ -1207,7 +1385,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         />
                         <TextField
                           fullWidth
-                          label={t('medicalRecordLabel')}
+                          label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                           type="text"
                           name="value"
                           value={currentRecord.value ?? ''}
@@ -1222,6 +1400,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                             spellCheck: 'false'
                           }}
                         />
+                        {requiresTwoValues() && (
+                          <TextField
+                            fullWidth
+                            label={t('diastolicPressure')}
+                            type="text"
+                            name="value2"
+                            value={currentRecord.value2 ?? ''}
+                            onChange={handleInputChange}
+                            required
+                            margin="normal"
+                            inputProps={{
+                              inputMode: 'decimal',
+                              autoComplete: 'off',
+                              autoCorrect: 'off',
+                              autoCapitalize: 'off',
+                              spellCheck: 'false'
+                            }}
+                          />
+                        )}
                         <TextField
                           fullWidth
                           label={t('notesLabel')}
@@ -1284,7 +1481,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             />
             <TextField
               fullWidth
-              label="医疗数据 (Medical Data)"
+              label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
               type="text"
               name="value"
               value={currentRecord.value ?? ''}
@@ -1299,6 +1496,25 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 spellCheck: 'false'
               }}
             />
+            {requiresTwoValues() && (
+              <TextField
+                fullWidth
+                label={t('diastolicPressure')}
+                type="text"
+                name="value2"
+                value={currentRecord.value2 ?? ''}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false'
+                }}
+              />
+            )}
             <TextField
               fullWidth
               label={t('notesLabel')}

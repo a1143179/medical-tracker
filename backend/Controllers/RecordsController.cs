@@ -77,6 +77,7 @@ public class RecordsController : ControllerBase
         var record = new Record
         {
             Value = dto.Value,
+            Value2 = dto.Value2,
             MeasurementTime = dto.MeasurementTime,
             Notes = dto.Notes,
             UserId = userId.Value,
@@ -112,6 +113,7 @@ public class RecordsController : ControllerBase
         }
 
         record.Value = dto.Value;
+        record.Value2 = dto.Value2;
         record.MeasurementTime = dto.MeasurementTime;
         record.Notes = dto.Notes;
         record.ValueTypeId = dto.ValueTypeId ?? record.ValueTypeId;
