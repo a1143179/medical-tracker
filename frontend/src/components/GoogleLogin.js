@@ -71,15 +71,7 @@ const GoogleLogin = () => {
           alignItems: 'center',
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%', mb: 2, mt: 2, justifyContent: 'center' }}>
-          <Box sx={{ 
-            width: { xs: 100, sm: 120, md: 150, lg: 200 },
-            height: { xs: 33, sm: 40, md: 50, lg: 67 },
-            bgcolor: 'transparent'
-          }}>
-            <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </Box>
-        </Stack>
+        {/* 移除 Logo 区域，保留 Divider 和后续内容 */}
         <Divider sx={{ width: { xs: '90%', sm: '80%' }, mb: 3 }} />
         <Grid container spacing={4} sx={{ 
           width: '100%',
