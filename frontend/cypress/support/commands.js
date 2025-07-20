@@ -73,3 +73,43 @@ export function formatLocalDateForInput(date) {
   const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 } 
+
+// Custom command to login with mock user
+Cypress.Commands.add('loginWithMockUser', (userData = {}) => {
+  const defaultUser = {
+    id: 1,
+    email: 'test@example.com',
+    name: 'Test User',
+    preferredValueTypeId: 1
+  };
+  
+  const user = { ...defaultUser, ...userData };
+  
+  cy.window().then((win) => {
+    win.localStorage.setItem('user', JSON.stringify(user));
+  });
+});
+
+// Custom command to clear all data
+Cypress.Commands.add('clearAllData', () => {
+  cy.window().then((win) => {
+    win.localStorage.clear();
+    win.sessionStorage.clear();
+  });
+  cy.clearCookies();
+});
+
+// Custom command to wait for API calls
+Cypress.Commands.add('waitForApiCalls', (aliases = []) => {
+  aliases.forEach(alias => {
+    cy.wait(alias);
+  });
+});
+
+// Custom command to mock API responses
+Cypress.Commands.add('mockApiResponse', (method, url, response, statusCode = 200) => {
+  cy.intercept(method, url, {
+    statusCode,
+    body: response
+  }).as(`${method.toLowerCase()}_${url.replace(/[^a-zA-Z0-9]/g, '_')}`);
+}); 

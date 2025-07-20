@@ -1,21 +1,8 @@
-const { defineConfig } = require('cypress')
+const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:55556',
-    setupNodeEvents(on, config) {
-      // implement node event listeners here
-      // Always disable GPU for Electron
-      on('before:browser:launch', (browser = {}, launchOptions) => {
-        if (browser.name === 'electron') {
-          launchOptions.args.push('--disable-gpu');
-        }
-        return launchOptions;
-      });
-      // Set DEBUG for all Cypress runs
-      process.env.DEBUG = 'cypress:*';
-      return config;
-    },
+    baseUrl: 'http://localhost:3000',
     viewportWidth: 1280,
     viewportHeight: 720,
     video: false,
@@ -23,10 +10,33 @@ module.exports = defineConfig({
     defaultCommandTimeout: 10000,
     requestTimeout: 10000,
     responseTimeout: 10000,
-    env: {
-      apiUrl: 'http://localhost:55556'
+    pageLoadTimeout: 30000,
+    watchForFileChanges: false,
+    setupNodeEvents(on, config) {
+      // implement node event listeners here
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+        table(message) {
+          console.table(message);
+          return null;
+        }
+      });
     },
-    supportFile: 'cypress/support/e2e.js'
+    env: {
+      // Environment variables for testing
+      apiUrl: 'http://localhost:5000/api',
+      googleClientId: 'test-client-id',
+      debug: false
+    },
+    retries: {
+      runMode: 2,
+      openMode: 0
+    },
+    experimentalStudio: true,
+    experimentalModifyObstructiveThirdPartyCode: true
   },
   component: {
     devServer: {
@@ -34,4 +44,22 @@ module.exports = defineConfig({
       bundler: 'webpack',
     },
   },
-}) 
+  // Configuration for different environments
+  env: {
+    // Development
+    development: {
+      baseUrl: 'http://localhost:3000',
+      apiUrl: 'http://localhost:5000/api'
+    },
+    // Staging
+    staging: {
+      baseUrl: 'https://staging.medicaltracker.com',
+      apiUrl: 'https://staging-api.medicaltracker.com/api'
+    },
+    // Production
+    production: {
+      baseUrl: 'https://medicaltracker.com',
+      apiUrl: 'https://api.medicaltracker.com/api'
+    }
+  }
+}); 
