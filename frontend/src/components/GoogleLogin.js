@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import GoogleIcon from '@mui/icons-material/Google';
 import { Box, Grid, Paper, Typography, Button, useTheme, useMediaQuery, Divider, Stack, Avatar, CircularProgress, Checkbox, FormControlLabel } from '@mui/material';
 
@@ -74,8 +73,8 @@ const GoogleLogin = () => {
       >
         <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%', mb: 2, mt: 2, justifyContent: 'center' }}>
           {!isMobile && (
-            <Avatar sx={{ bgcolor: 'primary.main', width: 56, height: 56 }}>
-              <LocalHospitalIcon sx={{ fontSize: 32, color: 'white' }} />
+            <Avatar sx={{ width: 56, height: 56 }}>
+              <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </Avatar>
           )}
           <Box>
