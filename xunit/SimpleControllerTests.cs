@@ -41,10 +41,6 @@ namespace Backend.Tests
                         options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString());
                     });
 
-                    // Configure authentication for testing
-                    services.AddAuthentication("Test")
-                        .AddScheme<TestAuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
-
                     // Create a new service provider
                     var serviceProvider = services.BuildServiceProvider();
 

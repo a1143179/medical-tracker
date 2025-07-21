@@ -15,6 +15,9 @@ using Backend.Models;
 using Backend.DTOs;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
@@ -41,15 +44,13 @@ namespace Backend.Tests
                         services.Remove(descriptor);
                     }
                     
-                    // Add in-memory database
+                    // Add in-memory database with unique name for each test
                     services.AddDbContext<AppDbContext>(options =>
                     {
                         options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString());
                     });
 
-                    // Configure authentication for testing
-                    services.AddAuthentication("Test")
-                        .AddScheme<TestAuthenticationSchemeOptions, TestAuthenticationHandler>("Test", options => { });
+                    // Authentication is already configured in Program.cs for Test environment
 
                     // Create a new service provider
                     var serviceProvider = services.BuildServiceProvider();
@@ -152,6 +153,11 @@ namespace Backend.Tests
         {
             // Arrange
             AddAuthCookie(_client);
+            
+            // Set up test data in the current test's database
+            using var scope = _factory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            SeedDatabase(dbContext);
 
             // Act
             var response = await _client.GetAsync("/api/records");
@@ -159,11 +165,14 @@ namespace Backend.Tests
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Response content: {content}");
+            
             var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(records);
+            Console.WriteLine($"Records count: {records.Count}");
             Assert.True(records.Count > 0);
         }
 
