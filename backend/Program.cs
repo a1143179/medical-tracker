@@ -99,8 +99,12 @@ else
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
                 
+                logger.LogInformation("OnValidatePrincipal triggered for path: {Path}", context.HttpContext.Request.Path);
+                
                 // Check for JWT token in cookies
                 var jwtToken = context.HttpContext.Request.Cookies["MedicalTracker.Auth.JWT"];
+                logger.LogInformation("JWT token found: {HasToken}", !string.IsNullOrEmpty(jwtToken));
+                
                 if (!string.IsNullOrEmpty(jwtToken))
                 {
                     try
@@ -109,8 +113,13 @@ else
                         if (principal != null)
                         {
                             context.Principal = principal;
-                            logger.LogInformation("JWT token validated successfully");
+                            logger.LogInformation("JWT token validated successfully for user: {Email}", 
+                                principal.FindFirst(ClaimTypes.Email)?.Value);
                             return;
+                        }
+                        else
+                        {
+                            logger.LogWarning("JWT token validation returned null principal");
                         }
                     }
                     catch (Exception ex)
@@ -118,8 +127,12 @@ else
                         logger.LogWarning(ex, "Failed to validate JWT token");
                     }
                 }
+                else
+                {
+                    logger.LogWarning("No JWT token found in cookies");
+                }
                 
-                logger.LogWarning("No valid JWT token found, authentication failed");
+                logger.LogWarning("Authentication failed, rejecting principal");
                 context.RejectPrincipal();
             };
         })
