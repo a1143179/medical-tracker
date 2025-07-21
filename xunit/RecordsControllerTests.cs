@@ -14,14 +14,6 @@ using Backend.Data;
 using Backend.Models;
 using Backend.DTOs;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using System.Security.Claims;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
-using System.Text.Encodings.Web;
 
 namespace Backend.Tests
 {
@@ -31,7 +23,7 @@ namespace Backend.Tests
         private readonly HttpClient _client;
 
         public RecordsControllerTests(WebApplicationFactory<Program> factory)
-        {
+{
             _factory = factory.WithWebHostBuilder(builder =>
             {
                 builder.UseEnvironment("Test");
@@ -43,14 +35,11 @@ namespace Backend.Tests
                     {
                         services.Remove(descriptor);
                     }
-                    
-                    // Add in-memory database with unique name for each test
+                    // Add in-memory database
                     services.AddDbContext<AppDbContext>(options =>
                     {
                         options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString());
                     });
-
-                    // Authentication is already configured in Program.cs for Test environment
 
                     // Create a new service provider
                     var serviceProvider = services.BuildServiceProvider();
@@ -115,29 +104,41 @@ namespace Backend.Tests
             context.ValueTypes.AddRange(bloodSugarType, bloodPressureType);
 
             // Add test records
-            var testRecord1 = new Backend.Models.Record
+            var testRecords = new List<Backend.Models.Record>
             {
-                Id = 1,
-                UserId = 1,
-                ValueTypeId = 1,
-                Value = 5.8m,
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow.AddHours(-1),
-                Notes = "Test record 1"
+                new Backend.Models.Record
+                {
+                    Id = 1,
+                    UserId = 1,
+                    ValueTypeId = 1,
+                    Value = 5.5m,
+                    Value2 = null,
+                    MeasurementTime = DateTime.UtcNow.AddHours(-1),
+                    Notes = "Test record 1"
+                },
+                new Backend.Models.Record
+                {
+                    Id = 2,
+                    UserId = 1,
+                    ValueTypeId = 1,
+                    Value = 6.2m,
+                    Value2 = null,
+                    MeasurementTime = DateTime.UtcNow.AddHours(-2),
+                    Notes = "Test record 2"
+                },
+                new Backend.Models.Record
+                {
+                    Id = 3,
+                    UserId = 1,
+                    ValueTypeId = 2,
+                    Value = 120m,
+                    Value2 = 80m,
+                    MeasurementTime = DateTime.UtcNow.AddHours(-3),
+                    Notes = "Blood pressure record"
+                }
             };
 
-            var testRecord2 = new Backend.Models.Record
-            {
-                Id = 2,
-                UserId = 1,
-                ValueTypeId = 2,
-                Value = 120m,
-                Value2 = 80m,
-                MeasurementTime = DateTime.UtcNow.AddHours(-2),
-                Notes = "Test record 2"
-            };
-
-            context.Records.AddRange(testRecord1, testRecord2);
+            context.Records.AddRange(testRecords);
             context.SaveChanges();
         }
 
@@ -151,28 +152,17 @@ namespace Backend.Tests
         [Fact]
         public async Task GetRecords_ReturnsOkResult()
         {
-            // Arrange
-            AddAuthCookie(_client);
-            
-            // Set up test data in the current test's database
-            using var scope = _factory.Services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            SeedDatabase(dbContext);
-
             // Act
             var response = await _client.GetAsync("/api/records");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var content = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Response content: {content}");
-            
             var records = JsonSerializer.Deserialize<List<Backend.Models.Record>>(content, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(records);
-            Console.WriteLine($"Records count: {records.Count}");
             Assert.True(records.Count > 0);
         }
 
@@ -180,7 +170,6 @@ namespace Backend.Tests
         public async Task GetRecords_WithUserId_ReturnsUserRecords()
         {
             // Arrange
-            AddAuthCookie(_client);
             var userId = 1;
 
             // Act
@@ -201,7 +190,6 @@ namespace Backend.Tests
         public async Task GetRecords_WithValueTypeId_ReturnsFilteredRecords()
         {
             // Arrange
-            AddAuthCookie(_client);
             var valueTypeId = 1;
 
             // Act
@@ -216,13 +204,12 @@ namespace Backend.Tests
             });
             Assert.NotNull(records);
             Assert.All(records, record => Assert.Equal(valueTypeId, record.ValueTypeId));
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task GetRecords_WithInvalidUserId_ReturnsEmptyList()
-        {
+    {
             // Arrange
-            AddAuthCookie(_client);
             var invalidUserId = 999;
 
             // Act
@@ -243,7 +230,6 @@ namespace Backend.Tests
         public async Task CreateRecord_ValidData_ReturnsCreated()
         {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
             {
                 ValueTypeId = 1,
@@ -261,18 +247,25 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        }
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var createdRecord = JsonSerializer.Deserialize<Backend.Models.Record>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            Assert.NotNull(createdRecord);
+            Assert.Equal(createDto.Value, createdRecord.Value);
+            Assert.Equal(createDto.Notes, createdRecord.Notes);
+    }
 
-        [Fact]
+    [Fact]
         public async Task CreateRecord_BloodPressure_ValidData_ReturnsCreated()
-        {
+    {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
             {
                 ValueTypeId = 2,
-                Value = 120m,
-                Value2 = 80m,
+                Value = 125m,
+                Value2 = 85m,
                 MeasurementTime = DateTime.UtcNow,
                 Notes = "Blood pressure test"
             };
@@ -285,20 +278,25 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var createdRecord = JsonSerializer.Deserialize<Backend.Models.Record>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            Assert.NotNull(createdRecord);
+            Assert.Equal(createDto.Value, createdRecord.Value);
+            Assert.Equal(createDto.Value2, createdRecord.Value2);
         }
 
         [Fact]
         public async Task CreateRecord_InvalidUserId_ReturnsBadRequest()
         {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
             {
                 ValueTypeId = 1,
                 Value = 5.8m,
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow,
-                Notes = "Test creation"
+                MeasurementTime = DateTime.UtcNow
             };
 
             var json = JsonSerializer.Serialize(createDto);
@@ -309,20 +307,17 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task CreateRecord_InvalidValueTypeId_ReturnsBadRequest()
-        {
+    {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
             {
-                ValueTypeId = 999, // Invalid value type
+                ValueTypeId = 999, // Invalid value type ID
                 Value = 5.8m,
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow,
-                Notes = "Test creation"
+                MeasurementTime = DateTime.UtcNow
             };
 
             var json = JsonSerializer.Serialize(createDto);
@@ -339,14 +334,11 @@ namespace Backend.Tests
         public async Task CreateRecord_NegativeValue_ReturnsBadRequest()
         {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
-            {
+        {
                 ValueTypeId = 1,
-                Value = -5.8m, // Negative value
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow,
-                Notes = "Test creation"
+                Value = -1m,
+                MeasurementTime = DateTime.UtcNow
             };
 
             var json = JsonSerializer.Serialize(createDto);
@@ -357,20 +349,17 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task CreateRecord_TooLargeValue_ReturnsBadRequest()
-        {
+    {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
             {
                 ValueTypeId = 1,
-                Value = 1000m, // Too large value
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow,
-                Notes = "Test creation"
+                Value = 1001m, // Too large
+                MeasurementTime = DateTime.UtcNow
             };
 
             var json = JsonSerializer.Serialize(createDto);
@@ -387,14 +376,12 @@ namespace Backend.Tests
         public async Task CreateRecord_TooLongNotes_ReturnsBadRequest()
         {
             // Arrange
-            AddAuthCookie(_client);
             var createDto = new CreateRecordDto
-            {
+        {
                 ValueTypeId = 1,
                 Value = 5.8m,
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow,
-                Notes = new string('a', 1001) // Too long notes
+            MeasurementTime = DateTime.UtcNow,
+                Notes = new string('a', 1001) // Too long
             };
 
             var json = JsonSerializer.Serialize(createDto);
@@ -405,51 +392,56 @@ namespace Backend.Tests
 
             // Assert
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task UpdateRecord_ValidData_ReturnsOk()
         {
             // Arrange
-            AddAuthCookie(_client);
+            var recordId = 1;
             var updateDto = new CreateRecordDto
             {
                 ValueTypeId = 1,
-                Value = 6.2m,
-                Value2 = null,
+                Value = 6.0m,
                 MeasurementTime = DateTime.UtcNow,
-                Notes = "Updated test record"
+                Notes = "Updated record"
             };
 
             var json = JsonSerializer.Serialize(updateDto);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await _client.PutAsync("/api/records/1", content);
+            var response = await _client.PutAsync($"/api/records/{recordId}", content);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var updatedRecord = JsonSerializer.Deserialize<Backend.Models.Record>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            Assert.NotNull(updatedRecord);
+            Assert.Equal(updateDto.Value, updatedRecord.Value);
+            Assert.Equal(updateDto.Notes, updatedRecord.Notes);
         }
 
         [Fact]
         public async Task UpdateRecord_NonExistentRecord_ReturnsNotFound()
         {
             // Arrange
-            AddAuthCookie(_client);
+            var nonExistentId = 999;
             var updateDto = new CreateRecordDto
-            {
+        {
                 ValueTypeId = 1,
-                Value = 6.2m,
-                Value2 = null,
-                MeasurementTime = DateTime.UtcNow,
-                Notes = "Updated test record"
+                Value = 6.0m,
+                MeasurementTime = DateTime.UtcNow
             };
 
             var json = JsonSerializer.Serialize(updateDto);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             // Act
-            var response = await _client.PutAsync("/api/records/999", content);
+            var response = await _client.PutAsync($"/api/records/{nonExistentId}", content);
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -459,23 +451,27 @@ namespace Backend.Tests
         public async Task DeleteRecord_ExistingRecord_ReturnsOk()
         {
             // Arrange
-            AddAuthCookie(_client);
+            var recordId = 1;
 
             // Act
-            var response = await _client.DeleteAsync("/api/records/1");
+            var response = await _client.DeleteAsync($"/api/records/{recordId}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            // Verify record is deleted
+            var getResponse = await _client.GetAsync($"/api/records/{recordId}");
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
         }
 
         [Fact]
         public async Task DeleteRecord_NonExistentRecord_ReturnsNotFound()
         {
             // Arrange
-            AddAuthCookie(_client);
+            var nonExistentId = 999;
 
             // Act
-            var response = await _client.DeleteAsync("/api/records/999");
+            var response = await _client.DeleteAsync($"/api/records/{nonExistentId}");
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -485,10 +481,10 @@ namespace Backend.Tests
         public async Task GetRecord_ExistingRecord_ReturnsOk()
         {
             // Arrange
-            AddAuthCookie(_client);
+            var recordId = 1;
 
             // Act
-            var response = await _client.GetAsync("/api/records/1");
+            var response = await _client.GetAsync($"/api/records/{recordId}");
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -498,14 +494,13 @@ namespace Backend.Tests
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(record);
-            Assert.Equal(1, record.Id);
+            Assert.Equal(recordId, record.Id);
         }
 
         [Fact]
         public async Task GetRecord_NonExistentRecord_ReturnsNotFound()
         {
             // Arrange
-            AddAuthCookie(_client);
             var nonExistentId = 999;
 
             // Act
@@ -519,7 +514,6 @@ namespace Backend.Tests
         public async Task GetRecords_WithPagination_ReturnsCorrectResults()
         {
             // Arrange
-            AddAuthCookie(_client);
             var page = 1;
             var pageSize = 2;
 
@@ -541,7 +535,6 @@ namespace Backend.Tests
         public async Task GetRecords_WithDateRange_ReturnsFilteredResults()
         {
             // Arrange
-            AddAuthCookie(_client);
             var startDate = DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-dd");
             var endDate = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd");
 
@@ -556,11 +549,11 @@ namespace Backend.Tests
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(records);
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task GetValueTypes_ReturnsAllValueTypes()
-        {
+    {
             // Act
             var response = await _client.GetAsync("/api/value-types");
 
@@ -573,13 +566,12 @@ namespace Backend.Tests
             });
             Assert.NotNull(valueTypes);
             Assert.True(valueTypes.Count >= 2); // At least blood sugar and blood pressure
-        }
+    }
 
-        [Fact]
+    [Fact]
         public async Task GetRecords_WithSorting_ReturnsSortedResults()
-        {
+    {
             // Arrange
-            AddAuthCookie(_client);
             var sortBy = "measurementTime";
             var sortOrder = "desc";
 

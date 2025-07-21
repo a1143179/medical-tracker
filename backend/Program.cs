@@ -47,19 +47,10 @@ oauthLogger.LogInformation("Google OAuth config - ClientId: {HasClientId}, Clien
     !string.IsNullOrEmpty(googleClientSecret), 
     builder.Environment.EnvironmentName);
 
-if (builder.Environment.IsEnvironment("Test"))
+if (builder.Environment.EnvironmentName == "Test")
 {
-    // Configure authentication for test environment
     builder.Services.AddAuthentication("Test")
         .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("Test", options => { });
-
-    // Configure authorization for test environment
-    builder.Services.AddAuthorization(options =>
-    {
-        options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder("Test")
-            .RequireAuthenticatedUser()
-            .Build();
-    });
 }
 else
 {
@@ -412,12 +403,6 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
         var identity = new ClaimsIdentity(claims, "Test");
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, "Test");
-        
-        // Debug: Log the claims being set
-        var logger = Context.RequestServices.GetRequiredService<ILogger<TestAuthHandler>>();
-        logger.LogInformation("TestAuthHandler: Setting claims - NameIdentifier: {NameIdentifier}, Name: {Name}, Email: {Email}", 
-            claims[0].Value, claims[1].Value, claims[2].Value);
-        
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }

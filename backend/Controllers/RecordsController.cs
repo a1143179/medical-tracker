@@ -26,22 +26,12 @@ public class RecordsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-        var userId = int.Parse(userIdClaim?.Value ?? "0");
-        
-        // Debug logging
-        var logger = HttpContext.RequestServices.GetRequiredService<ILogger<RecordsController>>();
-        logger.LogInformation("RecordsController.Get: UserId from claim: {UserIdClaim}, Parsed userId: {UserId}", 
-            userIdClaim?.Value, userId);
-        
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
         var records = await _context.Records
             .Include(r => r.ValueType)
             .Where(r => r.UserId == userId)
             .OrderByDescending(r => r.MeasurementTime)
             .ToListAsync();
-            
-        logger.LogInformation("RecordsController.Get: Found {Count} records for userId {UserId}", records.Count, userId);
-        
         return Ok(records);
     }
 
