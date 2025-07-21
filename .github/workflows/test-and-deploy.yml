@@ -59,17 +59,18 @@ jobs:
         wait-on-timeout: 120
 
     - name: Run Cypress tests (debug mode)
-      uses: cypress-io/github-action@v6
-      with:
-        working-directory: ./frontend
-        browser: chrome
-        record: false
-        config: baseUrl=http://localhost:3000
-        spec: cypress/e2e/smoke-tests.cy.js
-        wait-on: 'http://localhost:3000'
-        wait-on-timeout: 120
+      run: npm run cypress:run:debug
+      working-directory: ./frontend
       env:
-        DEBUG: cypress:*
+        ASPNETCORE_ENVIRONMENT: Test
+        ConnectionStrings__DefaultConnection: "Data Source=:memory:"
+
+    - name: Run Cypress tests (headless mode)
+      run: npm run cypress:run:headless
+      working-directory: ./frontend
+      env:
+        ASPNETCORE_ENVIRONMENT: Test
+        ConnectionStrings__DefaultConnection: "Data Source=:memory:"
 
     - name: Upload Cypress screenshots
       uses: actions/upload-artifact@v4
