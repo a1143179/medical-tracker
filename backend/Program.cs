@@ -215,7 +215,18 @@ else
                     };
                     
                     context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
-                    logger.LogInformation("OAuth callback successful for user: {Email}", email);
+                    
+                    // Also set a standard ASP.NET Core authentication cookie to trigger OnValidatePrincipal
+                    var authCookieOptions = new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = !environment.IsDevelopment(),
+                        SameSite = SameSiteMode.Lax,
+                        MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
+                    };
+                    context.HttpContext.Response.Cookies.Append(".AspNetCore.Cookies", "authenticated", authCookieOptions);
+                    
+                    logger.LogInformation("OAuth callback successful for user: {Email}, both JWT and auth cookies set", email);
                 }
                 context.Response.Redirect("/dashboard");
                 context.HandleResponse();
