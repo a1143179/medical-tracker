@@ -115,7 +115,7 @@ jobs:
       run: mkdir -p TestResults
 
     - name: Test with xUnit
-      run: dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed" --logger "trx;LogFileName=test-results.trx"
+      run: dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed" --logger "trx;LogFileName=$(pwd)/test-results.trx"
       env:
         ASPNETCORE_ENVIRONMENT: Test
         ConnectionStrings__DefaultConnection: "Data Source=:memory:"
@@ -126,7 +126,7 @@ jobs:
       with:
         name: test-results
         path: ./backend/test-results.trx
-        if-no-files-found: ignore
+        if-no-files-found: warn
 
     - name: Publish test results
       uses: dorny/test-reporter@v1
@@ -135,6 +135,7 @@ jobs:
         name: Backend Test Results
         path: ./backend/test-results.trx
         reporter: dotnet-trx
+        fail-on-empty: false
 
   # Integration Tests
   integration-tests:
