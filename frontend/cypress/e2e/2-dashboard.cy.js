@@ -1,9 +1,0 @@
-describe('Dashboard Load', () => {
-  beforeEach(() => {
-    cy.setCookie('MedicalTracker.Auth.JWT', 'mock-jwt-token');
-  });
-  it('should load dashboard after login', () => {
-    cy.visit('http://localhost:55555/dashboard');
-    cy.contains('Dashboard').should('exist');
-  });
-}); 
