@@ -216,17 +216,23 @@ else
                     
                     context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
                     
-                    // Also set a standard ASP.NET Core authentication cookie to trigger OnValidatePrincipal
-                    var authCookieOptions = new CookieOptions
+                    // Sign in the user with ASP.NET Core authentication
+                    var authClaims = new List<Claim>
                     {
-                        HttpOnly = true,
-                        Secure = !environment.IsDevelopment(),
-                        SameSite = SameSiteMode.Lax,
-                        MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim(ClaimTypes.Name, user.Name ?? user.Email),
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
                     };
-                    context.HttpContext.Response.Cookies.Append(".AspNetCore.Cookies", "authenticated", authCookieOptions);
+                    var identity = new ClaimsIdentity(authClaims, "Cookies");
+                    var authPrincipal = new ClaimsPrincipal(identity);
                     
-                    logger.LogInformation("OAuth callback successful for user: {Email}, both JWT and auth cookies set", email);
+                    await context.HttpContext.SignInAsync("Cookies", authPrincipal, new AuthenticationProperties
+                    {
+                        IsPersistent = rememberMe,
+                        ExpiresUtc = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(24)
+                    });
+                    
+                    logger.LogInformation("OAuth callback successful for user: {Email}, JWT and auth cookies set", email);
                 }
                 context.Response.Redirect("/dashboard");
                 context.HandleResponse();
