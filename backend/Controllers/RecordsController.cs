@@ -26,7 +26,11 @@ public class RecordsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        var nameIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (nameIdClaim == null || !int.TryParse(nameIdClaim.Value, out var userId))
+        {
+            return Unauthorized();
+        }
         var records = await _context.Records
             .Include(r => r.ValueType)
             .Where(r => r.UserId == userId)
@@ -38,7 +42,11 @@ public class RecordsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] CreateRecordDto dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        var nameIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (nameIdClaim == null || !int.TryParse(nameIdClaim.Value, out var userId))
+        {
+            return Unauthorized();
+        }
         if (dto.Value <= 0)
         {
             return BadRequest("Value must be greater than 0");
@@ -60,7 +68,11 @@ public class RecordsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(int id, [FromBody] CreateRecordDto dto)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        var nameIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (nameIdClaim == null || !int.TryParse(nameIdClaim.Value, out var userId))
+        {
+            return Unauthorized();
+        }
         if (dto.Value <= 0)
         {
             return BadRequest("Value must be greater than 0");
@@ -83,7 +95,11 @@ public class RecordsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+        var nameIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (nameIdClaim == null || !int.TryParse(nameIdClaim.Value, out var userId))
+        {
+            return Unauthorized();
+        }
         var record = await _context.Records
             .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
         if (record == null)
