@@ -94,6 +94,34 @@ else
                 context.Response.StatusCode = 403;
                 return Task.CompletedTask;
             };
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
+                
+                // Check for JWT token in cookies
+                var jwtToken = context.HttpContext.Request.Cookies["MedicalTracker.Auth.JWT"];
+                if (!string.IsNullOrEmpty(jwtToken))
+                {
+                    try
+                    {
+                        var principal = jwtService.ValidateToken(jwtToken);
+                        if (principal != null)
+                        {
+                            context.Principal = principal;
+                            logger.LogInformation("JWT token validated successfully");
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Failed to validate JWT token");
+                    }
+                }
+                
+                logger.LogWarning("No valid JWT token found, authentication failed");
+                context.RejectPrincipal();
+            };
         })
         .AddGoogle(options =>
         {
