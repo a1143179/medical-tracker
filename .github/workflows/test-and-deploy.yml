@@ -111,8 +111,11 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
 
+    - name: Ensure TestResults directory exists
+      run: mkdir -p TestResults
+
     - name: Test with xUnit
-      run: dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed" --logger "trx;LogFileName=test-results.trx"
+      run: dotnet test --no-build --verbosity normal --logger "console;verbosity=detailed" --logger "trx;LogFileName=TestResults/test-results.trx"
       env:
         ASPNETCORE_ENVIRONMENT: Test
         ConnectionStrings__DefaultConnection: "Data Source=:memory:"
@@ -122,7 +125,7 @@ jobs:
       if: always()
       with:
         name: test-results
-        path: ./backend/TestResults/
+        path: ./backend/TestResults/*.trx
         if-no-files-found: ignore
 
     - name: Publish test results
