@@ -78,7 +78,8 @@ jobs:
         ASPNETCORE_URLS: http://localhost:55555
         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
     - name: Wait for backend
-      run: npx wait-on http://localhost:55555/api/health
+      run: npx wait-on http://localhost:55555/health
+      working-directory: ./frontend
     - name: Run Cypress E2E (debug mode and headless mode)
       run: DEBUG=cypress:* npx cypress run --headless --config baseUrl=http://localhost:55555
       working-directory: ./frontend
