@@ -35,7 +35,7 @@ jobs:
       run: npm run build:production
       working-directory: ./frontend
     - name: Run Cypress E2E (debug mode and headless mode)
-      run: cross-env DEBUG=cypress:* npx cypress run --headless
+      run: DEBUG=cypress:* npx cypress run --headless
       working-directory: ./frontend
       env:
         ASPNETCORE_ENVIRONMENT: Test
@@ -113,7 +113,7 @@ jobs:
     - name: Wait for backend
       run: npx wait-on http://localhost:55555/api/health
     - name: Run integration tests (Cypress)
-      run: cross-env DEBUG=cypress:* npx cypress run --headless --config baseUrl=http://localhost:55555
+      run: DEBUG=cypress:* npx cypress run --headless --config baseUrl=http://localhost:55555
       working-directory: ./frontend
       env:
         ASPNETCORE_ENVIRONMENT: Test
