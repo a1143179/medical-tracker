@@ -124,8 +124,8 @@ jobs:
       working-directory: ./frontend
       run: npm ci
 
-    - name: Build frontend
-      run: npm ci && npm run build
+    - name: Build frontend (production)
+      run: npm ci && npm run build:production
       working-directory: ./frontend
 
     - name: Copy frontend build to backend wwwroot
@@ -137,13 +137,6 @@ jobs:
     - name: Build backend
       run: dotnet restore && dotnet build --no-restore
       working-directory: ./backend
-
-    - name: Run database migrations
-      working-directory: ./backend
-      run: dotnet ef database update
-      env:
-        ASPNETCORE_ENVIRONMENT: Test
-        ConnectionStrings__DefaultConnection: "Host=localhost;Database=medicaltracker_test;Username=postgres;Password=postgres"
 
     - name: Start backend
       run: dotnet run --no-build --urls http://localhost:55555 &
