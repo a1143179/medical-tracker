@@ -3,78 +3,125 @@ name: Deploy Medical Tracker to Azure
 on:
   push:
     branches: [ main, master ]
+  pull_request:
+    branches: [ main, working ]
 
 env:
   AZURE_WEBAPP_NAME: medicaltracker
   RESOURCE_GROUP: ResourceGroup1
   GHCR_IMAGE: ghcr.io/${{ github.repository }}/medicaltracker
+  NODE_VERSION: '20.17.0'
+  DOTNET_VERSION: '9.0.x'
 
 jobs:
-  build-frontend:
+  frontend-tests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    - name: Set up Node.js
+    - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18.x'
-    - name: Install frontend dependencies
-      run: |
-        cd frontend
-        npm ci
-    - name: Build frontend
-      run: |
-        cd frontend
-        npm run build
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+    - name: Install dependencies
+      run: npm ci
+      working-directory: ./frontend
+    - name: Run ESLint
+      run: npm run lint
+      working-directory: ./frontend
+    - name: Build frontend (production)
+      run: npm run build:production
+      working-directory: ./frontend
+    - name: Run Cypress E2E (debug mode and headless mode)
+      run: cross-env DEBUG=cypress:* npx cypress run --headless
+      working-directory: ./frontend
+      env:
+        ASPNETCORE_ENVIRONMENT: Test
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
     - name: Upload frontend build artifact
       uses: actions/upload-artifact@v4
       with:
         name: frontend-build
         path: frontend/build
 
-  build-backend:
+  backend-tests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    - name: Set up .NET
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
-    - name: Restore and publish backend
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    - name: Restore and build backend
       run: |
         cd backend
         dotnet restore
+        dotnet build --no-restore
+    - name: Run backend xUnit tests
+      run: |
+        cd xunit
+        dotnet test --no-build --verbosity normal
+    - name: Publish backend
+      run: |
+        cd backend
         dotnet publish -c Release -o ../backend-publish
     - name: Upload backend publish artifact
       uses: actions/upload-artifact@v4
       with:
         name: backend-publish
         path: backend-publish
-    - name: Upload backend/xunit artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: xunit-project
-        path: xunit
 
-  test:
+  integration-tests:
     runs-on: ubuntu-latest
-    needs: build-backend
+    needs: [frontend-tests, backend-tests]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
-    - name: Download xunit artifact
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Download frontend build artifact
       uses: actions/download-artifact@v4
       with:
-        name: xunit-project
-        path: xunit
-    - name: Run backend xUnit tests
+        name: frontend-build
+        path: frontend/build
+    - name: Download backend publish artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: backend-publish
+        path: backend-publish
+    - name: Start backend for integration tests
       run: |
-        cd xunit
-        dotnet test --no-build --verbosity normal
+        dotnet backend-publish/backend.dll --urls http://localhost:55555 &
+      env:
+        ASPNETCORE_ENVIRONMENT: Test
+        ASPNETCORE_URLS: http://localhost:55555
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
+    - name: Wait for backend
+      run: npx wait-on http://localhost:55555/api/health
+    - name: Run integration tests (Cypress)
+      run: cross-env DEBUG=cypress:* npx cypress run --headless --config baseUrl=http://localhost:55555
+      working-directory: ./frontend
+      env:
+        ASPNETCORE_ENVIRONMENT: Test
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
 
   build-docker-container:
     runs-on: ubuntu-latest
-    needs: [build-frontend, build-backend, test]
+    needs: [frontend-tests, backend-tests, integration-tests]
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
