@@ -66,6 +66,10 @@ jobs:
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
+    - name: Copy frontend build to backend-publish/wwwroot
+      run: |
+        mkdir -p backend-publish/wwwroot
+        cp -r frontend/build/* backend-publish/wwwroot/
     - name: Start backend for integration tests
       run: |
         dotnet backend-publish/backend.dll --urls http://localhost:55555 &
