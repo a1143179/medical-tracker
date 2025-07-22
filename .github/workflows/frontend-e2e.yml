@@ -1,0 +1,53 @@
+name: Frontend E2E Tests
+
+on:
+  push:
+    branches: [ main, working ]
+  pull_request:
+    branches: [ main, working ]
+
+jobs:
+  cypress-e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
+      GOOGLE_CLIENT_ID: test-client-id
+      GOOGLE_CLIENT_SECRET: test-client-secret
+      JWT_SECRET: test-jwt-secret
+      PORT: 55555
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+      - name: Install backend dependencies
+        run: dotnet restore ./backend/backend.csproj
+      - name: Run backend migrations
+        run: dotnet ef database update --project ./backend/backend.csproj
+      - name: Start backend
+        run: dotnet run --project ./backend/backend.csproj --urls http://localhost:55555 &
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+      - name: Start frontend
+        run: npm run --prefix frontend start:test &
+      - name: Wait for frontend
+        run: npx wait-on http://localhost:55555
+      - name: Run Cypress tests
+        run: npx cypress run --browser chrome --config-file frontend/cypress.config.js 
