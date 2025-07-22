@@ -82,7 +82,7 @@ else
                 context.Response.StatusCode = 403;
                 return Task.CompletedTask;
             };
-            options.Events.OnValidatePrincipal = async context =>
+            options.Events.OnValidatePrincipal = context =>
             {
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                 var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
@@ -103,7 +103,7 @@ else
                             context.Principal = principal;
                             logger.LogInformation("JWT token validated successfully for user: {Email}", 
                                 principal.FindFirst(ClaimTypes.Email)?.Value);
-                            return;
+                            return Task.CompletedTask;
                         }
                         else
                         {
@@ -122,6 +122,7 @@ else
                 
                 logger.LogWarning("Authentication failed, rejecting principal");
                 context.RejectPrincipal();
+                return Task.CompletedTask;
             };
         })
         .AddGoogle(options =>
