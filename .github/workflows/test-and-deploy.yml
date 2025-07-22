@@ -1,10 +1,10 @@
 name: Test and Deploy
 
 on:
-  push:
-    branches: [ main, working ]
   pull_request:
     branches: [ main, working ]
+
+# NOTE: To enforce PRs for main, set branch protection rules in GitHub settings to block direct pushes to main.
 
 env:
   NODE_VERSION: '20.17.0'
