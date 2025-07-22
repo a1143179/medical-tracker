@@ -1,9 +1,11 @@
 describe('Medical Tracker CRUD Flow (Mock Google OAuth)', () => {
   beforeEach(() => {
-    cy.session('test-user', () => {
-      // Directly log in via the test endpoint
-      cy.request('/api/auth/test-login');
+    // Intercept /api/auth/login to prevent redirect to Google
+    cy.intercept('GET', '/api/auth/login', (req) => {
+      req.reply({ statusCode: 200, body: 'Mocked login - no redirect' });
     });
+    // Simulate Google redirecting back to the app after OAuth
+    cy.visit('/api/auth/callback?access_token=fake-access-token&refresh_token=fake-refresh-token&code=fake-code&state=fake-state');
     cy.visit('/dashboard');
     cy.contains('Add New Record').should('exist');
   });
