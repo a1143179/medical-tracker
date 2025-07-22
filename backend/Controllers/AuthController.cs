@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Backend.Controllers;
 
@@ -176,4 +178,57 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "Preferred value type updated successfully" });
     }
+
+#if DEBUG
+    [HttpGet("test-login")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TestLogin()
+    {
+        var testUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "test.user@example.com");
+        if (testUser == null)
+        {
+            testUser = new User
+            {
+                GoogleId = "test-google-id",
+                Email = "test.user@example.com",
+                Name = "Test User",
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(testUser);
+            await _context.SaveChangesAsync();
+        }
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, testUser.Id.ToString()),
+            new Claim(ClaimTypes.Email, testUser.Email),
+            new Claim(ClaimTypes.Name, testUser.Name)
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true, 
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity),
+            authProperties);
+
+        // Set JWT cookie for frontend auth
+        var jwtToken = _jwtService.GenerateToken(testUser, true);
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = SameSiteMode.Lax,
+            MaxAge = TimeSpan.FromDays(7)
+        };
+        Response.Cookies.Append("MedicalTracker.Auth.JWT", jwtToken, cookieOptions);
+
+        return Ok(new { Message = "Test user logged in successfully." });
+    }
+#endif
 } 
