@@ -72,22 +72,6 @@ jobs:
         ASPNETCORE_ENVIRONMENT: Test
         ConnectionStrings__DefaultConnection: "Data Source=:memory:"
 
-    - name: Upload Cypress screenshots
-      uses: actions/upload-artifact@v4
-      if: failure()
-      with:
-        name: cypress-screenshots
-        path: ./frontend/cypress/screenshots
-        if-no-files-found: ignore
-
-    - name: Upload Cypress videos
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: cypress-videos
-        path: ./frontend/cypress/videos
-        if-no-files-found: ignore
-
   # Backend Tests
   backend-tests:
     runs-on: ubuntu-latest
@@ -118,23 +102,6 @@ jobs:
       env:
         ASPNETCORE_ENVIRONMENT: Test
         ConnectionStrings__DefaultConnection: "Data Source=:memory:"
-
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: ./backend/test-results.trx
-        if-no-files-found: warn
-
-    - name: Publish test results
-      uses: dorny/test-reporter@v1
-      if: always()
-      with:
-        name: Backend Test Results
-        path: ./backend/test-results.trx
-        reporter: dotnet-trx
-        fail-on-empty: false
 
   # Integration Tests
   integration-tests:
@@ -300,12 +267,6 @@ jobs:
         scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
 
   # Performance Tests
   performance-tests:
