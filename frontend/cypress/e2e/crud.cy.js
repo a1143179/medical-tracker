@@ -4,10 +4,10 @@ let currentUserId;
 describe('Medical Tracker CRUD Flow', () => {
 
   beforeEach(() => {
-    cy.visit('/login');
-    cy.get('[data-testid="google-signin-button"]').invoke('attr', 'data-redirect-url', '/api/auth/testlogin');
-    cy.get('[data-testid="google-signin-button"]').click();
-    cy.url().should('include', '/dashboard');
+    cy.request('/api/auth/testlogin');
+    cy.visit('/dashboard');
+    cy.request('/api/auth/me').its('status').should('eq', 200);
+    cy.contains(/Add New Record|添加新记录/).should('be.visible');
   });
 
   it('should add, update, and delete a record', () => {

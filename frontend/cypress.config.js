@@ -5,7 +5,7 @@ module.exports = defineConfig({
     baseUrl: 'http://localhost:55555',
     specPattern: 'cypress/e2e/**/*.cy.js',
     supportFile: false,
-    video: false,
+    video: true,
     chromeWebSecurity: false,
     defaultCommandTimeout: 10000,
   },
