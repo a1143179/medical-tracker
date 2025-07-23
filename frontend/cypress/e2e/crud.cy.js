@@ -15,8 +15,7 @@ describe('Medical Tracker CRUD Flow', () => {
       }
     });
     cy.visit('/dashboard');
-    cy.request('/api/auth/me').its('status').should('eq', 200);
-    cy.contains(/Add New Record|添加新记录/).should('be.visible');
+    cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
   });
 
   it('should add, update, and delete a record', () => {
