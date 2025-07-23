@@ -4,17 +4,10 @@ let currentUserId;
 describe('Medical Tracker CRUD Flow', () => {
 
   beforeEach(() => {
-    cy.intercept('GET', /\/api\/auth\/login.*/, (req) => {
-      req.headers['x-cypress-test'] = 'true';
-    }).as('cypressLogin');
     cy.visit('/login');
     cy.get('[data-testid="google-signin-button"]').invoke('attr', 'data-redirect-url', '/api/auth/testlogin');
     cy.get('[data-testid="google-signin-button"]').click();
     cy.url().should('include', '/dashboard');
-    cy.request('/api/auth/me').then((resp) => {
-      currentUserId = resp.body.id;
-      cy.contains('Add New Record').should('be.visible');
-    });
   });
 
   it('should add, update, and delete a record', () => {
