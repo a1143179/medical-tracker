@@ -111,11 +111,12 @@ jobs:
     - name: Build frontend (production)
       run: npm ci && npm run build:production
       working-directory: ./frontend
-    - name: Copy frontend build to backend wwwroot
+    - name: Clean wwwroot folders and copy frontend build to backend-publish
       run: |
         rm -rf backend/wwwroot
-        mkdir -p backend/wwwroot
-        cp -r frontend/build/* backend/wwwroot/
+        rm -rf backend-publish/wwwroot
+        mkdir -p backend-publish/wwwroot
+        cp -r frontend/build/* backend-publish/wwwroot/
     - name: Publish backend
       run: |
         cd backend
