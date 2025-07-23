@@ -4,7 +4,16 @@ let currentUserId;
 describe('Medical Tracker CRUD Flow', () => {
 
   beforeEach(() => {
-    cy.request('/api/auth/testlogin');
+    cy.request('/api/auth/testlogin').then((resp) => {
+      const cookies = resp.headers['set-cookie'];
+      if (cookies) {
+        const jwtCookie = cookies.find(c => c.startsWith('MedicalTracker.Auth.JWT='));
+        if (jwtCookie) {
+          const jwtValue = jwtCookie.split(';')[0].split('=')[1];
+          cy.setCookie('MedicalTracker.Auth.JWT', jwtValue);
+        }
+      }
+    });
     cy.visit('/dashboard');
     cy.request('/api/auth/me').its('status').should('eq', 200);
     cy.contains(/Add New Record|添加新记录/).should('be.visible');
