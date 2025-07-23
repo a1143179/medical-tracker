@@ -90,6 +90,12 @@ jobs:
       env:
         ASPNETCORE_ENVIRONMENT: Test
         ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
+    - name: Upload Cypress screenshots
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cypress-screenshots
+        path: frontend/cypress/screenshots
 
   build-docker-container:
     runs-on: ubuntu-latest
