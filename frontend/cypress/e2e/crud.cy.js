@@ -10,7 +10,7 @@ describe('Medical Tracker CRUD Flow', () => {
         const jwtCookie = cookies.find(c => c.startsWith('MedicalTracker.Auth.JWT='));
         if (jwtCookie) {
           const jwtValue = jwtCookie.split(';')[0].split('=')[1];
-          cy.setCookie('MedicalTracker.Auth.JWT', jwtValue);
+          cy.setCookie('MedicalTracker.Auth.JWT', jwtValue, { path: '/' });
         }
       }
     });
