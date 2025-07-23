@@ -70,6 +70,9 @@ jobs:
       run: |
         mkdir -p backend-publish/wwwroot
         cp -r frontend/build/* backend-publish/wwwroot/
+    - name: List backend-publish/wwwroot contents (debug)
+      run: |
+        ls -l backend-publish/wwwroot
     - name: Start backend for integration tests
       run: |
         dotnet backend-publish/backend.dll --urls http://localhost:55555 &
