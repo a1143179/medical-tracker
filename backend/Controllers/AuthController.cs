@@ -34,8 +34,7 @@ public class AuthController : ControllerBase
         _jwtService = jwtService;
     }
 
-    [HttpGet("login")]
-    public async Task<IActionResult> Login(string returnUrl = "/dashboard", bool rememberMe = false)
+    public IActionResult Login(string returnUrl = "/dashboard", bool rememberMe = false)
     {
         // 移除 fake login 相关代码，只保留正常 Google OAuth 登录逻辑
         // Check if Google OAuth is configured
