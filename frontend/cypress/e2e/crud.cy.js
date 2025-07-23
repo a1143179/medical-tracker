@@ -1,25 +1,20 @@
-// This file contains only the CRUD flow. The OAuth login test should be in cypress/e2e/auth.cy.js.
+
+let currentUserId;
 
 describe('Medical Tracker CRUD Flow', () => {
-  // Helper function to mock login state before each test
-  const mockLogin = () => {
-    // Simulate a logged-in user by setting the JWT cookie as required by the backend
-    cy.setCookie('MedicalTracker.Auth.JWT', 'mock-jwt-token-for-authenticated-user', { path: '/' });
-    // If your app also uses localStorage for user info, you can set it here if needed
-    // cy.window().then((win) => {
-    //   win.localStorage.setItem('userProfile', JSON.stringify({
-    //     id: 'user123',
-    //     name: 'Test User',
-    //     email: 'test@example.com'
-    //   }));
-    // });
-  };
 
   beforeEach(() => {
-    // Simulate user login before each test by setting the JWT cookie
-    mockLogin();
-    cy.visit('/dashboard'); // Go directly to dashboard page after login
-    cy.contains('Add New Record').should('exist'); // Ensure the page loads
+    cy.intercept('GET', /\/api\/auth\/login.*/, (req) => {
+      req.headers['x-cypress-test'] = 'true';
+    }).as('cypressLogin');
+    cy.visit('/login');
+    cy.get('[data-testid="google-signin-button"]').invoke('attr', 'data-redirect-url', '/api/auth/testlogin');
+    cy.get('[data-testid="google-signin-button"]').click();
+    cy.url().should('include', '/dashboard');
+    cy.request('/api/auth/me').then((resp) => {
+      currentUserId = resp.body.id;
+      cy.contains('Add New Record').should('be.visible');
+    });
   });
 
   it('should add, update, and delete a record', () => {
@@ -29,18 +24,27 @@ describe('Medical Tracker CRUD Flow', () => {
     cy.get('input[name="value"]').type('5.5');
     cy.get('textarea[name="notes"]').type('Test record');
     cy.get('[data-testid="add-new-record-button"]').click(); // Use data-testid for the add button
-    cy.contains('Record added successfully').should('exist');
-    cy.contains('Test record').should('exist');
+    cy.contains('Record added successfully').should('be.visible');
+
+    // 如有分页控件，设置每页显示 25 条，避免新记录被分页隐藏
+    cy.get('body').then($body => {
+      if ($body.find('select[aria-label="Rows per page:"]').length) {
+        cy.get('select[aria-label="Rows per page:"]').select('25');
+      }
+    });
+
+    // 等待“Test record”行出现
+    cy.contains('Test record', { timeout: 10000 }).should('be.visible');
 
     // Update the record
     cy.contains('Test record').parents('tr').within(() => {
-      cy.get('[data-testid="edit-record-button"]').click(); // Use data-testid for the edit button
+      cy.get('[data-testid="edit-record-button"]').should('exist').click(); // Use data-testid for the edit button
     });
     cy.get('input[name="value"]').clear().type('6.2');
     cy.get('textarea[name="notes"]').clear().type('Updated record');
     cy.get('[data-testid="save-record-button"]').click(); // Use data-testid for the save button
-    cy.contains('Record updated successfully').should('exist');
-    cy.contains('Updated record').should('exist');
+    cy.contains('Record updated successfully').should('be.visible');
+    cy.contains('Updated record').should('be.visible');
 
     // Delete the record
     cy.contains('Updated record').parents('tr').within(() => {
@@ -51,7 +55,7 @@ describe('Medical Tracker CRUD Flow', () => {
       });
       cy.get('[data-testid="delete-record-button"]').click(); // Use data-testid for the delete button
     });
-    cy.contains('Record deleted successfully').should('exist');
+    cy.contains('Record deleted successfully').should('be.visible');
     cy.contains('Updated record').should('not.exist');
   });
 });

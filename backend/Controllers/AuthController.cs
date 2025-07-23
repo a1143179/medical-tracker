@@ -35,12 +35,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("login")]
-    public IActionResult Login(string returnUrl = "/", bool rememberMe = false)
+    public async Task<IActionResult> Login(string returnUrl = "/dashboard", bool rememberMe = false)
     {
+        // 移除 fake login 相关代码，只保留正常 Google OAuth 登录逻辑
         // Check if Google OAuth is configured
         var googleClientId = _configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         var googleClientSecret = _configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
-        
         if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
         {
             // Return a proper HTML error page for browser requests
@@ -57,10 +57,8 @@ public class AuthController : ControllerBase
                         </body>
                     </html>", "text/html");
             }
-            
             return BadRequest(new { message = "Google OAuth is not configured. Please add Google:ClientId and Google:ClientSecret to your configuration." });
         }
-
         var properties = new AuthenticationProperties
         {
             RedirectUri = "/api/auth/callback",
@@ -74,7 +72,6 @@ public class AuthController : ControllerBase
             IsPersistent = true,
             ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
         };
-
         // In production, ensure the redirect URI uses HTTPS
         if (!_environment.IsDevelopment())
         {
@@ -83,7 +80,6 @@ public class AuthController : ControllerBase
             var redirectUri = $"https://{host}/api/auth/callback";
             properties.RedirectUri = redirectUri;
         }
-
         // Use the authentication middleware to challenge Google OAuth
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
@@ -180,55 +176,34 @@ public class AuthController : ControllerBase
     }
 
 #if DEBUG
-    [HttpGet("test-login")]
-    [AllowAnonymous]
+    [HttpGet("testlogin")]
     public async Task<IActionResult> TestLogin()
     {
-        var testUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "test.user@example.com");
+        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "";
+        if (!(env.Contains("Development") || env.Contains("Test")))
+            return Unauthorized();
+        var testEmail = "testuser@e2e.com";
+        var testUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == testEmail);
         if (testUser == null)
         {
             testUser = new User
             {
-                GoogleId = "test-google-id",
-                Email = "test.user@example.com",
-                Name = "Test User",
-                CreatedAt = DateTime.UtcNow
+                Email = testEmail,
+                Name = "E2E Test User",
+                GoogleId = "e2e-test-google-id"
             };
             _context.Users.Add(testUser);
             await _context.SaveChangesAsync();
         }
-
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, testUser.Id.ToString()),
-            new Claim(ClaimTypes.Email, testUser.Email),
-            new Claim(ClaimTypes.Name, testUser.Name)
-        };
-
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var authProperties = new AuthenticationProperties
-        {
-            IsPersistent = true, 
-            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
-        };
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity),
-            authProperties);
-
-        // Set JWT cookie for frontend auth
-        var jwtToken = _jwtService.GenerateToken(testUser, true);
-        var cookieOptions = new CookieOptions
+        var jwt = _jwtService.GenerateToken(testUser);
+        Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
         {
             HttpOnly = true,
-            Secure = !_environment.IsDevelopment(),
+            Secure = false,
             SameSite = SameSiteMode.Lax,
-            MaxAge = TimeSpan.FromDays(7)
-        };
-        Response.Cookies.Append("MedicalTracker.Auth.JWT", jwtToken, cookieOptions);
-
-        return Ok(new { Message = "Test user logged in successfully." });
+            Path = "/"
+        });
+        return Redirect("/dashboard");
     }
 #endif
 } 

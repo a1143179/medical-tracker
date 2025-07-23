@@ -225,7 +225,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         return;
       }
       
-      const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`, {
+      const response = await fetch(`${API_URL}`, {
         credentials: 'include'
       });
       const data = await response.json();
@@ -300,7 +300,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       }
 
       if (isEditing) {
-        const response = await fetch(`${API_URL}/${currentRecord.id}?userId=${encodeURIComponent(userId)}`, {
+        const response = await fetch(`${API_URL}/${currentRecord.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -322,7 +322,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         showMessage(t('recordUpdatedSuccessfully'), 'success');
       } else {
         // Convert local time to UTC before sending to backend
-        const response = await fetch(`${API_URL}?userId=${encodeURIComponent(userId)}`, {
+        const response = await fetch(`${API_URL}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -385,7 +385,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           return;
         }
         
-        await fetch(`${API_URL}/${id}?userId=${encodeURIComponent(userId)}`, { 
+        await fetch(`${API_URL}/${id}`, { 
           method: 'DELETE',
           credentials: 'include'
         });
@@ -1368,12 +1368,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                                   </TableCell>
                                   <TableCell>
                                     <Tooltip title={t('edit')}>
-                                      <IconButton onClick={() => handleEdit(record)} color="primary">
+                                      <IconButton onClick={() => handleEdit(record)} color="primary" data-testid="edit-record-button">
                                         <EditIcon />
                                       </IconButton>
                                     </Tooltip>
                                     <Tooltip title={t('delete')}>
-                                      <IconButton onClick={() => handleDelete(record.id)} color="error">
+                                      <IconButton onClick={() => handleDelete(record.id)} color="error" data-testid="delete-record-button">
                                         <DeleteIcon />
                                       </IconButton>
                                     </Tooltip>
@@ -1686,7 +1686,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={resetForm}>{t('cancel')}</Button>
-          <Button onClick={handleSubmit} variant="contained" data-testid="add-new-record-button">
+          <Button onClick={handleSubmit} variant="contained" data-testid={isEditing ? "save-record-button" : "add-new-record-button"}>
             {isEditing ? t('update') : t('addRecordButton')}
           </Button>
         </DialogActions>

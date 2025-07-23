@@ -54,77 +54,16 @@ if (builder.Environment.EnvironmentName == "Test")
 }
 else
 {
-    // 原有Cookie/Google认证注册逻辑
+    // 移除 Cookie 认证方案，仅保留 Google OAuth 认证
     if (!string.IsNullOrEmpty(googleClientId) && !string.IsNullOrEmpty(googleClientSecret))
     {
         builder.Services.AddAuthentication(options =>
         {
-            options.DefaultScheme = "Cookies";
+            options.DefaultScheme = GoogleDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-            options.DefaultSignInScheme = "Cookies";
+            options.DefaultSignInScheme = "Cookies"; // 关键：Google OAuth 需要本地 Cookie 方案
         })
-        .AddCookie("Cookies", options =>
-        {
-            options.Events.OnRedirectToLogin = context => {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning("OnRedirectToLogin triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
-                context.Response.StatusCode = 401;
-                return Task.CompletedTask;
-            };
-            options.Cookie.HttpOnly = true;
-            options.Cookie.IsEssential = true;
-            options.Cookie.SecurePolicy = !builder.Environment.IsDevelopment() ? CookieSecurePolicy.Always : CookieSecurePolicy.None;
-            options.Cookie.SameSite = SameSiteMode.Lax;
-            options.Cookie.MaxAge = TimeSpan.FromHours(1);
-            options.Events.OnRedirectToAccessDenied = context => {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning("OnRedirectToAccessDenied triggered. Path: {Path}, RedirectUri: {RedirectUri}", context.Request.Path, context.RedirectUri);
-                context.Response.StatusCode = 403;
-                return Task.CompletedTask;
-            };
-            options.Events.OnValidatePrincipal = context =>
-            {
-                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
-                
-                logger.LogInformation("OnValidatePrincipal triggered for path: {Path}", context.HttpContext.Request.Path);
-                
-                // Check for JWT token in cookies
-                var jwtToken = context.HttpContext.Request.Cookies["MedicalTracker.Auth.JWT"];
-                logger.LogInformation("JWT token found: {HasToken}", !string.IsNullOrEmpty(jwtToken));
-                
-                if (!string.IsNullOrEmpty(jwtToken))
-                {
-                    try
-                    {
-                        var principal = jwtService.ValidateToken(jwtToken);
-                        if (principal != null)
-                        {
-                            context.Principal = principal;
-                            logger.LogInformation("JWT token validated successfully for user: {Email}", 
-                                principal.FindFirst(ClaimTypes.Email)?.Value);
-                            return Task.CompletedTask;
-                        }
-                        else
-                        {
-                            logger.LogWarning("JWT token validation returned null principal");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex, "Failed to validate JWT token");
-                    }
-                }
-                else
-                {
-                    logger.LogWarning("No JWT token found in cookies");
-                }
-                
-                logger.LogWarning("Authentication failed, rejecting principal");
-                context.RejectPrincipal();
-                return Task.CompletedTask;
-            };
-        })
+        .AddCookie("Cookies") // 只用于 Google OAuth 登录流程
         .AddGoogle(options =>
         {
             options.ClientId = googleClientId;
@@ -154,21 +93,10 @@ else
             {
                 var userService = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
                 var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                var headers = context.HttpContext.Request.Headers.Select(h => $"{h.Key}: {h.Value}").ToList();
-                var userAgent = context.HttpContext.Request.Headers["User-Agent"].ToString();
-                var accept = context.HttpContext.Request.Headers["Accept"].ToString();
-                var xRequestedWith = context.HttpContext.Request.Headers["X-Requested-With"].ToString();
-                var referer = context.HttpContext.Request.Headers["Referer"].ToString();
-                logger.LogInformation("OAuth ticket received. Referer: {Referer}, User-Agent: {UserAgent}, Accept: {Accept}, X-Requested-With: {XRequestedWith}, AllHeaders: {Headers}", referer, userAgent, accept, xRequestedWith, string.Join(" | ", headers));
-                var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
-                var environment = context.HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>();
-                // Do not redeclare logger; it is already defined above
-
                 var claims = context.Principal != null ? context.Principal.Claims : Enumerable.Empty<Claim>();
                 var email = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
                 var name = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Name)?.Value;
                 var googleId = claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                
                 if (!string.IsNullOrEmpty(email))
                 {
                     var user = await userService.Users.FirstOrDefaultAsync(u => u.Email == email);
@@ -186,42 +114,18 @@ else
                         await userService.SaveChangesAsync();
                         logger.LogInformation("Updated existing user: {Email}", email);
                     }
-                    
-                    // Get remember me setting from OAuth properties
+                    var jwtService = context.HttpContext.RequestServices.GetRequiredService<IJwtService>();
                     var rememberMe = context.Properties?.Items.ContainsKey("rememberMe") == true 
                         && bool.TryParse(context.Properties.Items["rememberMe"], out var rm) && rm;
-                    
-                    // Generate JWT token
                     var token = jwtService.GenerateToken(user, rememberMe);
-                    
-                    // Set JWT token as HTTP-only cookie
                     var cookieOptions = new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = !environment.IsDevelopment(),
+                        Secure = !builder.Environment.IsDevelopment(),
                         SameSite = SameSiteMode.Lax,
                         MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
                     };
-                    
                     context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
-                    
-                    // Sign in the user with ASP.NET Core authentication
-                    var authClaims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Name, user.Name ?? user.Email),
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
-                    };
-                    var identity = new ClaimsIdentity(authClaims, "Cookies");
-                    var authPrincipal = new ClaimsPrincipal(identity);
-                    
-                    await context.HttpContext.SignInAsync("Cookies", authPrincipal, new AuthenticationProperties
-                    {
-                        IsPersistent = rememberMe,
-                        ExpiresUtc = rememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(24)
-                    });
-                    
-                    logger.LogInformation("OAuth callback successful for user: {Email}, JWT and auth cookies set", email);
                 }
                 context.Response.Redirect("/dashboard");
                 context.HandleResponse();
@@ -244,7 +148,7 @@ else
     }
     else
     {
-        builder.Services.AddAuthentication(options => { options.DefaultScheme = "Cookies"; }).AddCookie("Cookies");
+        builder.Services.AddAuthentication(options => { options.DefaultScheme = GoogleDefaults.AuthenticationScheme; });
     }
 }
 
@@ -343,6 +247,22 @@ app.Use(async (context, next) =>
             var code = context.Request.Query["code"].ToString();
             logger.LogInformation("Callback middleware - State: '{State}', Code: '{Code}', StateEmpty: {StateEmpty}, CodeEmpty: {CodeEmpty}", 
                 state, code, string.IsNullOrEmpty(state), string.IsNullOrEmpty(code));
+        }
+    }
+    await next();
+});
+
+// 在 app.UseAuthentication() 之前插入自定义 JWT 解析中间件
+app.Use(async (context, next) =>
+{
+    var jwt = context.Request.Cookies["MedicalTracker.Auth.JWT"];
+    if (!string.IsNullOrEmpty(jwt))
+    {
+        var jwtService = context.RequestServices.GetRequiredService<IJwtService>();
+        var principal = jwtService.ValidateToken(jwt);
+        if (principal != null)
+        {
+            context.User = principal;
         }
     }
     await next();
