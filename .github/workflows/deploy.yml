@@ -75,7 +75,8 @@ jobs:
         ls -l backend-publish/wwwroot
     - name: Start backend for integration tests
       run: |
-        dotnet backend-publish/backend.dll --urls http://localhost:55555 &
+        cd backend-publish
+        dotnet backend.dll --urls http://localhost:55555 &
       env:
         ASPNETCORE_ENVIRONMENT: Test
         ASPNETCORE_URLS: http://localhost:55555
