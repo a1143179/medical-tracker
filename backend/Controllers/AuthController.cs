@@ -197,7 +197,7 @@ public class AuthController : ControllerBase
         var jwt = _jwtService.GenerateToken(testUser);
         Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
         {
-            HttpOnly = true,
+            HttpOnly = false, // 允许 Cypress 读取
             Secure = false,
             SameSite = SameSiteMode.Lax,
             Path = "/"

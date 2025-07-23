@@ -15,6 +15,7 @@ describe('Medical Tracker CRUD Flow', () => {
       }
     });
     cy.visit('/dashboard');
+    cy.getCookie('MedicalTracker.Auth.JWT').should('exist');
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
   });
 
