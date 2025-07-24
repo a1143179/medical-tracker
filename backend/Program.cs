@@ -20,12 +20,13 @@ logger.LogInformation("Application starting up. Environment: {Environment}", bui
 // Logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", Serilog.Events.LogEventLevel.Debug)
-    .MinimumLevel.Override("Backend", Serilog.Events.LogEventLevel.Debug)
+    .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", Serilog.Events.LogEventLevel.Information)
+    .MinimumLevel.Override("Backend", Serilog.Events.LogEventLevel.Information)
     .WriteTo.Console()
     .WriteTo.File("logs/app.log", rollingInterval: RollingInterval.Day, fileSizeLimitBytes: 10 * 1024 * 1024, retainedFileCountLimit: 5, rollOnFileSizeLimit: true)
     .CreateLogger();
 builder.Host.UseSerilog();
+Log.Information("Serilog file logging is working. Environment: {Environment}", builder.Environment.EnvironmentName);
 
 // Services
 builder.Services.AddControllers();
