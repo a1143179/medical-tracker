@@ -32,52 +32,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
-    - name: Install frontend dependencies
-      run: npm ci
-      working-directory: ./frontend
-    - name: Build frontend (production)
-      run: npm run build:production
-      working-directory: ./frontend
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Restore and build backend
+    - name: Build and run Docker image for integration tests
       run: |
-        cd backend
-        dotnet restore
-        dotnet build --no-restore -c Debug
-    - name: Run backend xUnit tests
-      run: |
-        cd xunit
-        dotnet test --no-build --verbosity normal
-    - name: Publish backend (Debug for E2E)
-      run: |
-        cd backend
-        dotnet publish -c Debug -o ../backend-publish
-    - name: Copy frontend build to backend-publish/wwwroot
-      run: |
-        mkdir -p backend-publish/wwwroot
-        cp -r frontend/build/* backend-publish/wwwroot/
-    - name: List backend-publish/wwwroot contents (debug)
-      run: |
-        ls -l backend-publish/wwwroot
-    - name: Ensure backend logs directory exists
-      run: mkdir -p backend/logs
-    - name: Start backend for integration tests
-      run: |
-        cd backend-publish
-        dotnet backend.dll --urls http://localhost:55555 &
-      env:
-        ASPNETCORE_ENVIRONMENT: Test
-        ASPNETCORE_URLS: http://localhost:55555
-        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres"
+        docker build -t medicaltracker-test:latest .
+        docker run -d --name medicaltracker-test -p 55555:8080 \
+          -e ASPNETCORE_ENVIRONMENT=Test \
+          -e ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres" \
+          medicaltracker-test:latest
     - name: Wait for backend
       run: npx wait-on http://localhost:55555/health
       working-directory: ./frontend
@@ -103,13 +64,13 @@ jobs:
         name: cypress-videos
         path: frontend/cypress/videos
     - name: List backend logs directory (debug)
-      run: ls -l backend-publish/logs || true
+      run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
     - name: Upload backend log for Cypress debugging
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: backend-log
-        path: backend-publish/logs/
+        path: logs/
 
   build-docker-container:
     runs-on: ubuntu-latest
@@ -117,30 +78,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
-    - name: Build frontend (production)
-      run: npm ci && npm run build:production
-      working-directory: ./frontend
-    - name: Clean wwwroot folders and copy frontend build to backend-publish
-      run: |
-        rm -rf backend/wwwroot
-        rm -rf backend-publish/wwwroot
-        mkdir -p backend-publish/wwwroot
-        cp -r frontend/build/* backend-publish/wwwroot/
-    - name: Publish backend
-      run: |
-        cd backend
-        dotnet restore
-        dotnet publish -c Release -o ../backend-publish
     - name: Log in to GitHub Container Registry
       uses: docker/login-action@v3
       with:
