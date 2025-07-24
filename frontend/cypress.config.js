@@ -8,6 +8,15 @@ module.exports = defineConfig({
     video: true,
     chromeWebSecurity: false,
     defaultCommandTimeout: 10000,
+    setupNodeEvents(on, config) {
+      on('task', {
+        log(message) {
+          // eslint-disable-next-line no-console
+          console.log('[CYPRESS][LOG]', message);
+          return null;
+        }
+      });
+    },
   },
   screenshotsFolder: 'cypress/screenshots',
   videosFolder: 'cypress/videos',

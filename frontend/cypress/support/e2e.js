@@ -1,10 +1,8 @@
 beforeEach(() => {
   cy.intercept({ url: '**', middleware: true }, (req) => {
-    // eslint-disable-next-line no-console
-    console.log('[CYPRESS][request]', req.method, req.url, req.headers, req.body);
+    cy.task('log', `[CYPRESS][request] ${req.method} ${req.url} ${JSON.stringify(req.headers)} ${JSON.stringify(req.body)}`);
     req.on('response', (res) => {
-      // eslint-disable-next-line no-console
-      console.log('[CYPRESS][response]', res.statusCode, res.body);
+      cy.task('log', `[CYPRESS][response] ${res.statusCode} ${req.url} ${JSON.stringify(res.body)}`);
     });
   });
 }); 
