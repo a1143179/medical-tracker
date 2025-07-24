@@ -4,20 +4,20 @@ let currentUserId;
 describe('Medical Tracker CRUD Flow', () => {
 
   beforeEach(() => {
-    cy.visit('/');
-    cy.request('/api/auth/testlogin').then((resp) => {
-      const cookies = resp.headers['set-cookie'];
-      if (cookies) {
-        const jwtCookie = cookies.find(c => c.startsWith('MedicalTracker.Auth.JWT='));
-        if (jwtCookie) {
-          const jwtValue = jwtCookie.split(';')[0].split('=')[1];
-          cy.setCookie('MedicalTracker.Auth.JWT', jwtValue, { path: '/' });
+    cy.session('testuser', () => {
+      cy.request('/api/auth/testlogin').then((resp) => {
+        const cookies = resp.headers['set-cookie'];
+        if (cookies) {
+          const jwtCookie = cookies.find(c => c.startsWith('MedicalTracker.Auth.JWT='));
+          if (jwtCookie) {
+            const jwtValue = jwtCookie.split(';')[0].split('=')[1];
+            cy.setCookie('MedicalTracker.Auth.JWT', jwtValue, { path: '/' });
+          }
         }
-      }
+      });
     });
-    cy.reload();
-    cy.getCookie('MedicalTracker.Auth.JWT').should('exist');
     cy.visit('/dashboard');
+    cy.window().then(win => cy.log('document.cookie: ' + win.document.cookie));
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
   });
 
