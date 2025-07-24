@@ -69,6 +69,8 @@ jobs:
         path: frontend/cypress/videos
     - name: List backend logs directory (debug)
       run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
+    - name: Copy backend logs from container
+      run: docker cp medicaltracker-test:/app/logs ./logs || true
     - name: Upload backend log for Cypress debugging
       if: always()
       uses: actions/upload-artifact@v4
