@@ -4,6 +4,7 @@ let currentUserId;
 describe('Medical Tracker CRUD Flow', () => {
 
   beforeEach(() => {
+    cy.visit('/');
     cy.request('/api/auth/testlogin').then((resp) => {
       const cookies = resp.headers['set-cookie'];
       if (cookies) {
@@ -14,8 +15,9 @@ describe('Medical Tracker CRUD Flow', () => {
         }
       }
     });
-    cy.visit('/dashboard');
+    cy.reload();
     cy.getCookie('MedicalTracker.Auth.JWT').should('exist');
+    cy.visit('/dashboard');
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
   });
 
