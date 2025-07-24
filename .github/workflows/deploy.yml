@@ -71,7 +71,7 @@ jobs:
         dotnet publish -c Release -o ../backend-publish
     - name: Build and run Docker image for integration tests
       run: |
-        docker build -t medicaltracker-test:latest .
+        docker build --no-cache -t medicaltracker-test:latest .
         docker run -d --name medicaltracker-test -p 55555:8080 \
           -e ASPNETCORE_ENVIRONMENT=Test \
           -e ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=testdb;Username=postgres;Password=postgres" \
@@ -152,7 +152,7 @@ jobs:
         password: ${{ secrets.GHCR_PAT_TOKEN }}
     - name: Build and push Docker image
       run: |
-        docker build -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} -t ${{ env.GHCR_IMAGE }}:latest -t ${{ env.GHCR_IMAGE }}:${{ github.run_number }} .
+        docker build --no-cache -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} -t ${{ env.GHCR_IMAGE }}:latest -t ${{ env.GHCR_IMAGE }}:${{ github.run_number }} .
         docker push ${{ env.GHCR_IMAGE }}:${{ github.sha }}
         docker push ${{ env.GHCR_IMAGE }}:latest
         docker push ${{ env.GHCR_IMAGE }}:${{ github.run_number }}
