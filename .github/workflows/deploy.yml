@@ -100,6 +100,12 @@ jobs:
       with:
         name: cypress-videos
         path: frontend/cypress/videos
+    - name: Upload backend log for Cypress debugging
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-log
+        path: backend/logs/app.log
 
   build-docker-container:
     runs-on: ubuntu-latest
