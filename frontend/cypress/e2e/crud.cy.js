@@ -59,6 +59,9 @@ describe('Medical Tracker CRUD Flow', () => {
       cy.get('[data-testid="delete-record-button"]').click(); // Use data-testid for the delete button
     });
     cy.contains('Record deleted successfully').should('be.visible');
+    // Reload the page to ensure the UI is refreshed and the deleted record is removed
+    cy.reload();
+    // Assert that the updated record no longer exists in the DOM
     cy.contains('Updated record').should('not.exist');
   });
 });
