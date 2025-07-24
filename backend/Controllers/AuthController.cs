@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
 
     public IActionResult Login(string returnUrl = "/dashboard", bool rememberMe = false)
     {
-        // 移除 fake login 相关代码，只保留正常 Google OAuth 登录逻辑
+        // Remove fake login related code, only keep normal Google OAuth login logic
         // Check if Google OAuth is configured
         var googleClientId = _configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         var googleClientSecret = _configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
@@ -106,7 +106,7 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User-Agent: {UserAgent}", Request.Headers["User-Agent"].ToString());
         // Log raw Cookie header
         _logger.LogInformation("Raw Cookie header: {Cookie}", Request.Headers["Cookie"].ToString());
-        // Get token from cookie only
+        // Get JWT token from cookies
         var token = Request.Cookies["MedicalTracker.Auth.JWT"];
         _logger.LogInformation("JWT cookie value: {Token}", token);
         if (string.IsNullOrEmpty(token))
@@ -211,7 +211,7 @@ public class AuthController : ControllerBase
         var jwt = _jwtService.GenerateToken(testUser);
         Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
         {
-            HttpOnly = false, // 允许 Cypress 读取
+            HttpOnly = false, // Allow Cypress to read
             Secure = false,
             SameSite = SameSiteMode.Lax,
             Path = "/"
