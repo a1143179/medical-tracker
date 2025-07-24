@@ -192,6 +192,8 @@ public class AuthController : ControllerBase
     [HttpGet("testlogin")]
     public async Task<IActionResult> TestLogin()
     {
+        _logger.LogInformation("TestLogin endpoint called.");
+        _logger.LogInformation("Environment: {Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "";
         if (!(env.Contains("Development") || env.Contains("Test")))
             return Unauthorized();

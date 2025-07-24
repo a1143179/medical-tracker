@@ -12,17 +12,9 @@ describe('Medical Tracker CRUD Flow', () => {
     });
     // Click the login button to trigger backend test login
     cy.get('[data-testid="google-signin-button"]').click();
-    // After redirect, visit dashboard
-    cy.visit('/dashboard');
     // Log all cookies for debugging
     cy.window().then(win => {
       cy.log('document.cookie: ' + win.document.cookie);
-    });
-    // Check authentication status and log warning if not authenticated
-    cy.request({ url: '/api/auth/me', failOnStatusCode: false }).then(resp => {
-      if (resp.status !== 200) {
-        cy.log('WARNING: Not authenticated after test login. Cookies: ' + document.cookie);
-      }
     });
     // Wait for dashboard to load
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
