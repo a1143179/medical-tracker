@@ -4,20 +4,27 @@ let currentUserId;
 describe('Medical Tracker CRUD Flow', () => {
 
   beforeEach(() => {
-    cy.session('testuser', () => {
-      cy.request('/api/auth/testlogin').then((resp) => {
-        const cookies = resp.headers['set-cookie'];
-        if (cookies) {
-          const jwtCookie = cookies.find(c => c.startsWith('MedicalTracker.Auth.JWT='));
-          if (jwtCookie) {
-            const jwtValue = jwtCookie.split(';')[0].split('=')[1];
-            cy.setCookie('MedicalTracker.Auth.JWT', jwtValue, { path: '/' });
-          }
-        }
-      });
+    // Visit the login page
+    cy.visit('/login');
+    // Dynamically set the login button's redirect URL to /api/auth/testlogin
+    cy.get('[data-testid="google-signin-button"]').then($btn => {
+      $btn[0].setAttribute('data-redirect-url', '/api/auth/testlogin');
     });
+    // Click the login button to trigger backend test login
+    cy.get('[data-testid="google-signin-button"]').click();
+    // After redirect, visit dashboard
     cy.visit('/dashboard');
-    cy.window().then(win => cy.log('document.cookie: ' + win.document.cookie));
+    // Log all cookies for debugging
+    cy.window().then(win => {
+      cy.log('document.cookie: ' + win.document.cookie);
+    });
+    // Check authentication status and log warning if not authenticated
+    cy.request({ url: '/api/auth/me', failOnStatusCode: false }).then(resp => {
+      if (resp.status !== 200) {
+        cy.log('WARNING: Not authenticated after test login. Cookies: ' + document.cookie);
+      }
+    });
+    // Wait for dashboard to load
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
   });
 
