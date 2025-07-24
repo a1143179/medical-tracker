@@ -13,7 +13,7 @@ module.exports = defineConfig({
         log(message) {
           // eslint-disable-next-line no-console
           console.log('[CYPRESS][LOG]', message);
-          return null;
+          return Promise.resolve(null);
         }
       });
     },
