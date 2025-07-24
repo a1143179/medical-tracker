@@ -71,6 +71,8 @@ jobs:
       run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
     - name: Copy backend logs from container
       run: docker cp medicaltracker-test:/app/logs ./logs || true
+    - name: List logs directory after copy
+      run: ls -l logs || true
     - name: Upload backend log for Cypress debugging
       if: always()
       uses: actions/upload-artifact@v4
