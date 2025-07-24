@@ -68,6 +68,8 @@ jobs:
     - name: List backend-publish/wwwroot contents (debug)
       run: |
         ls -l backend-publish/wwwroot
+    - name: Ensure backend logs directory exists
+      run: mkdir -p backend/logs
     - name: Start backend for integration tests
       run: |
         cd backend-publish
