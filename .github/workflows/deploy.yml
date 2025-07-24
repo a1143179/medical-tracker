@@ -90,10 +90,16 @@ jobs:
       with:
         name: backend-log
         path: logs/
+    - name: Show host root directory (pwd)
+      run: pwd
     - name: List host root directory
       run: ls -l
+    - name: Show backend directory (pwd)
+      run: pwd
     - name: List backend directory
       run: ls -l backend || true
+    - name: Show logs directory after copy (pwd)
+      run: pwd
     - name: List logs directory after copy
       run: ls -l logs || true
     - name: List container /app/logs directory
