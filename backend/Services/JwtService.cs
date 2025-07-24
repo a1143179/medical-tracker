@@ -29,8 +29,8 @@ public class JwtService : IJwtService
     public string GenerateToken(User user, bool rememberMe = false)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
-        var jwtIssuer = "https://medicaltracker.azurewebsites.net";
-        var jwtAudience = "https://medicaltracker.azurewebsites.net";
+        var jwtIssuer = _configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "https://medicaltracker.azurewebsites.net";
+        var jwtAudience = _configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "https://medicaltracker.azurewebsites.net";
 
         if (string.IsNullOrEmpty(jwtKey))
         {
@@ -86,8 +86,8 @@ public class JwtService : IJwtService
         try
         {
             var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
-            var jwtIssuer = "https://medicaltracker.azurewebsites.net";
-            var jwtAudience = "https://medicaltracker.azurewebsites.net";
+            var jwtIssuer = _configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "https://medicaltracker.azurewebsites.net";
+            var jwtAudience = _configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "https://medicaltracker.azurewebsites.net";
 
             if (string.IsNullOrEmpty(jwtKey))
             {
