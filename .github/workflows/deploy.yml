@@ -36,13 +36,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-    - name: Cache npm dependencies
-      uses: actions/cache@v4
-      with:
-        path: frontend/node_modules
-        key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-npm-
     - name: Install frontend dependencies
       run: npm ci
       working-directory: ./frontend
@@ -53,13 +46,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('backend/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
     - name: Restore and build backend
       run: |
         cd backend
@@ -69,6 +55,8 @@ jobs:
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
+    - name: Show AuthController.cs (first 100 lines)
+      run: head -100 backend/Controllers/AuthController.cs
     - name: Build and run Docker image for integration tests
       run: |
         docker build --no-cache -t medicaltracker-test:latest .
