@@ -90,6 +90,14 @@ jobs:
       with:
         name: backend-log
         path: logs/
+    - name: List host root directory
+      run: ls -l
+    - name: List backend directory
+      run: ls -l backend || true
+    - name: List logs directory after copy
+      run: ls -l logs || true
+    - name: List container /app/logs directory
+      run: docker exec medicaltracker-test ls -l /app/logs || true
 
   build-docker-container:
     runs-on: ubuntu-latest
