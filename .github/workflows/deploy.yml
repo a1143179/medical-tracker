@@ -105,7 +105,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: backend-log
-        path: backend/logs/app.log
+        path: backend/logs/
 
   build-docker-container:
     runs-on: ubuntu-latest
