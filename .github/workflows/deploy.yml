@@ -78,8 +78,6 @@ jobs:
       with:
         name: cypress-videos
         path: frontend/cypress/videos
-    - name: List backend logs directory (debug)
-      run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
     - name: Show host root directory (pwd)
       run: pwd
     - name: List host root directory
@@ -88,6 +86,8 @@ jobs:
       run: pwd
     - name: List backend directory
       run: ls -l backend || true
+    - name: List backend logs directory (debug)
+      run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
     - name: List container /app/logs directory
       run: docker exec medicaltracker-test ls -l /app/logs || true
     - name: Copy backend logs from container
