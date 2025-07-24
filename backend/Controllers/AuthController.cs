@@ -95,31 +95,37 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
+        // Log all cookies for debugging
+        _logger.LogInformation("/api/auth/me called. All cookies: {Cookies}", string.Join("; ", Request.Cookies.Select(kv => kv.Key + "=" + kv.Value)));
         // Get token from cookie only
         var token = Request.Cookies["MedicalTracker.Auth.JWT"];
-        
+        _logger.LogInformation("JWT cookie value: {Token}", token);
         if (string.IsNullOrEmpty(token))
         {
             _logger.LogWarning("No JWT token found in cookies");
             return Unauthorized();
         }
-
         try
         {
-            var email = _jwtService.GetUserEmailFromToken(token);
+            var principal = _jwtService.ValidateToken(token);
+            if (principal == null)
+            {
+                _logger.LogWarning("JWT token validation failed for token: {Token}", token);
+                return Unauthorized();
+            }
+            var email = principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+            _logger.LogInformation("JWT validated. Email: {Email}", email);
             if (string.IsNullOrEmpty(email))
             {
                 _logger.LogWarning("Invalid JWT token - no email found");
                 return Unauthorized();
             }
-
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
                 _logger.LogWarning("User not found for email: {Email}", email);
                 return Unauthorized();
             }
-
             var userDto = new UserDto
             {
                 Id = user.Id,
@@ -127,7 +133,6 @@ public class AuthController : ControllerBase
                 Name = user.Name,
                 PreferredValueTypeId = user.PreferredValueTypeId
             };
-
             _logger.LogInformation("Successfully authenticated user: {Email}", email);
             return Ok(userDto);
         }
