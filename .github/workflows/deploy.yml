@@ -80,16 +80,6 @@ jobs:
         path: frontend/cypress/videos
     - name: List backend logs directory (debug)
       run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
-    - name: Copy backend logs from container
-      run: docker cp medicaltracker-test:/app/logs ./logs || true
-    - name: List logs directory after copy
-      run: ls -l logs || true
-    - name: Upload backend log for Cypress debugging
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend-log
-        path: logs/
     - name: Show host root directory (pwd)
       run: pwd
     - name: List host root directory
@@ -98,12 +88,20 @@ jobs:
       run: pwd
     - name: List backend directory
       run: ls -l backend || true
+    - name: List container /app/logs directory
+      run: docker exec medicaltracker-test ls -l /app/logs || true
+    - name: Copy backend logs from container
+      run: docker cp medicaltracker-test:/app/logs ./logs || true
     - name: Show logs directory after copy (pwd)
       run: pwd
     - name: List logs directory after copy
       run: ls -l logs || true
-    - name: List container /app/logs directory
-      run: docker exec medicaltracker-test ls -l /app/logs || true
+    - name: Upload backend log for Cypress debugging
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-log
+        path: logs/
 
   build-docker-container:
     runs-on: ubuntu-latest
