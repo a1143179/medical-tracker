@@ -71,9 +71,9 @@ if ($RUN_DB) {
 
 if ($RUN_BACKEND) {
     if (Test-PortAvailable 55555) {
-        Write-Host "Starting backend (watch mode, Debug configuration)..."
+        Write-Host "Starting backend (watch mode, Release configuration)..."
         $env:ASPNETCORE_ENVIRONMENT = "Development"
-        Start-Process -WorkingDirectory "$PSScriptRoot/backend" -FilePath "cmd.exe" -ArgumentList '/c dotnet restore && dotnet watch run -c Debug && pause'
+        Start-Process -WorkingDirectory "$PSScriptRoot/backend" -FilePath "cmd.exe" -ArgumentList '/c dotnet restore && dotnet watch run -c Release && pause'
     } else {
         Write-Host "Port 55555 is already in use. Skipping backend startup."
     }
