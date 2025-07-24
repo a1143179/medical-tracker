@@ -102,6 +102,8 @@ jobs:
       with:
         name: cypress-videos
         path: frontend/cypress/videos
+    - name: List backend logs directory (debug)
+      run: ls -l backend/logs || true
     - name: Upload backend log for Cypress debugging
       if: always()
       uses: actions/upload-artifact@v4
