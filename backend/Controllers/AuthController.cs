@@ -97,6 +97,15 @@ public class AuthController : ControllerBase
     {
         // Log all cookies for debugging
         _logger.LogInformation("/api/auth/me called. All cookies: {Cookies}", string.Join("; ", Request.Cookies.Select(kv => kv.Key + "=" + kv.Value)));
+        // Log all request headers
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
+        }
+        // Log User-Agent
+        _logger.LogInformation("User-Agent: {UserAgent}", Request.Headers["User-Agent"].ToString());
+        // Log raw Cookie header
+        _logger.LogInformation("Raw Cookie header: {Cookie}", Request.Headers["Cookie"].ToString());
         // Get token from cookie only
         var token = Request.Cookies["MedicalTracker.Auth.JWT"];
         _logger.LogInformation("JWT cookie value: {Token}", token);
