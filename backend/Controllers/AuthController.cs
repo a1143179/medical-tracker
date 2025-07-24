@@ -188,7 +188,6 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Preferred value type updated successfully" });
     }
 
-#if DEBUG
     [HttpGet("testlogin")]
     public async Task<IActionResult> TestLogin()
     {
@@ -220,5 +219,4 @@ public class AuthController : ControllerBase
         });
         return Redirect("/dashboard");
     }
-#endif
 } 

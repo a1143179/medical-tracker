@@ -55,8 +55,8 @@ jobs:
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
-    - name: Show AuthController.cs (first 100 lines)
-      run: head -100 backend/Controllers/AuthController.cs
+    - name: Show AuthController.cs (first 1000 lines)
+      run: head -1000 backend/Controllers/AuthController.cs
     - name: Build and run Docker image for integration tests
       run: |
         docker build --no-cache -t medicaltracker-test:latest .
