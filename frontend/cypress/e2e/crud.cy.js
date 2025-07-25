@@ -20,7 +20,7 @@ describe('Medical Tracker CRUD Flow', () => {
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
     // Wait until the value types dropdown is loaded and contains at least one option
     // Use data-testid for more robust selection
-    cy.get('[data-testid="value-type-dropdown"]', { timeout: 10000 }).should('exist');
+    cy.get('[data-testid="value-type-dropdown"]').should('be.visible');
     // Check that the value-type input exists and has a non-empty value
     cy.get('[data-testid="value-type-dropdown"] input', { timeout: 10000 })
       .should('exist')
