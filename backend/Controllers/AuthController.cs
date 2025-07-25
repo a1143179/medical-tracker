@@ -34,6 +34,7 @@ public class AuthController : ControllerBase
         _jwtService = jwtService;
     }
 
+    [HttpGet("login")]
     public IActionResult Login(string returnUrl = "/dashboard", bool rememberMe = false)
     {
         // Remove fake login related code, only keep normal Google OAuth login logic
