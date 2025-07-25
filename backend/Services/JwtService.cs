@@ -71,18 +71,7 @@ public class JwtService : IJwtService
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
-        if (_env.EnvironmentName == "Test")
-        {
-            // 直接返回一个伪造的用户
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Email, "test@example.com"),
-                new Claim(ClaimTypes.Name, "Test User"),
-                new Claim(ClaimTypes.NameIdentifier, "1")
-            };
-            var identity = new ClaimsIdentity(claims, "TestAuth");
-            return new ClaimsPrincipal(identity);
-        }
+        // Always validate the JWT token, even in Test environment
         try
         {
             var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
@@ -111,10 +100,7 @@ public class JwtService : IJwtService
             };
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
-            
-            _logger.LogDebug("JWT token validated successfully for user {Email}", 
-                principal.FindFirst(ClaimTypes.Email)?.Value);
-            
+            _logger.LogDebug("JWT token validated successfully for user {Email}", principal.FindFirst(ClaimTypes.Email)?.Value);
             return principal;
         }
         catch (Exception ex)
