@@ -60,7 +60,7 @@ jobs:
     - name: Wait for PostgreSQL
       run: |
         for i in {1..30}; do
-          nc -z postgres 5432 && echo "Postgres is up" && exit 0
+          nc -z localhost 5432 && echo "Postgres is up" && exit 0
           echo "Waiting for postgres..."
           sleep 2
         done
@@ -70,7 +70,7 @@ jobs:
       run: |
         cd backend-publish
         ASPNETCORE_ENVIRONMENT=Test \
-        ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=password" \
+        ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=password" \
         dotnet backend.dll &
     - name: Wait for backend
       timeout-minutes: 1
