@@ -104,3 +104,18 @@ jobs:
       with:
         name: backend-log
         path: backend-publish/logs/ 
+    - name: Log in to GitHub Container Registry
+      if: github.ref == 'refs/heads/main'
+      run: echo "${{ secrets.GHCR_PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Azure Login
+      if: github.ref == 'refs/heads/main'
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Deploy to Azure Web App for Containers
+      if: github.ref == 'refs/heads/main'
+      run: |
+        az webapp config container set \
+          --name ${{ env.AZURE_WEBAPP_NAME }} \
+          --resource-group ${{ env.RESOURCE_GROUP }} \
+          --docker-custom-image-name ${{ env.GHCR_IMAGE }}:${{ github.run_number }} 
