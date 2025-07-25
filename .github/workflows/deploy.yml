@@ -48,19 +48,19 @@ jobs:
         mkdir -p backend/wwwroot
         rm -rf backend/wwwroot/*
         cp -r frontend/build/. backend/wwwroot/
-    - name: Debug: list backend/wwwroot after copy
+    
+    - name: list backend/wwwroot after copy
       run: ls -l backend/wwwroot
-
-    - name: Debug: copy logo-blue.png explicitly
-      run: cp frontend/build/logo-blue.png backend/wwwroot/ || true
-
-    - name: Debug: list backend/wwwroot after explicit copy
+    - name: copy logo-blue.png explicitly
+      run: cp frontend/build/logo-blue.png backend/wwwroot/    
+    - name: Debug list backend/wwwroot after explicit copy
       run: ls -l backend/wwwroot
 
     - name: Setup .NET 9.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+    
     - name: Publish backend
       run: |
         cd backend
