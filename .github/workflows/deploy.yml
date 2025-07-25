@@ -49,46 +49,26 @@ jobs:
         rm -rf backend/wwwroot/*
         cp -r frontend/build/* backend/wwwroot/
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: ${{ env.DOTNET_VERSION }}
     - name: Publish backend
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
-    - name: Install netcat
-      run: sudo apt-get update && sudo apt-get install -y netcat-openbsd
-    - name: Wait for PostgreSQL
+
+    - name: List workspace contents before Docker build
+      run: ls -l
+
+    - name: Build Docker image
       run: |
-        for i in {1..30}; do
-          nc -z localhost 5432 && echo "Postgres is up" && exit 0
-          echo "Waiting for postgres..."
-          sleep 2
-        done
-        echo "Postgres did not become available in time" >&2
-        exit 1
-    - name: Build and run Docker image for integration tests
+        docker build -t medicaltracker-e2e:latest .
+
+    - name: Start backend container
       run: |
-        cd backend-publish
-        ASPNETCORE_ENVIRONMENT=Test \
-        ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=password" \
-        ASPNETCORE_URLS="http://0.0.0.0:55555" \
-        dotnet backend.dll &
-    - name: Wait for frontend /health
+        docker run -d --name medicaltracker-e2e -p 55555:55555 medicaltracker-e2e:latest
+
+    - name: Wait for backend /health
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/health
-      working-directory: ./frontend
-    - name: Wait for backend /api/health
-      timeout-minutes: 1
-      run: npx wait-on http://localhost:55555/api/health
-      working-directory: ./frontend
-    - name: Show backend container logs if healthcheck fails
-      if: failure()
-      run: cat backend-publish/logs/app.log || true
-    - name: Debug testlogin route
-      run: |
-        curl -i http://localhost:55555/api/auth/testlogin || true
+
     - name: Run Cypress E2E
       run: npx cypress run --config baseUrl=http://localhost:55555
       working-directory: ./frontend
