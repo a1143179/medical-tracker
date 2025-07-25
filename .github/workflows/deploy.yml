@@ -111,13 +111,16 @@ jobs:
     - name: Log in to GitHub Container Registry
       if: github.ref == 'refs/heads/main'
       run: echo "${{ secrets.GHCR_PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+  azure-deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
     - name: Azure Login
-      if: github.ref == 'refs/heads/main'
       uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Deploy to Azure Web App for Containers
-      if: github.ref == 'refs/heads/main'
       run: |
         az webapp config container set \
           --name ${{ env.AZURE_WEBAPP_NAME }} \
