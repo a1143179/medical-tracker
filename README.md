@@ -393,6 +393,88 @@ The project provides platform-specific startup scripts:
 - **Compression**: Automatic response compression
 - **Single Container**: Reduced deployment complexity and resource usage
 
+## 🧑‍💻 Local Development Best Practice
+
+- It is recommended to use `docker-compose.yml` to manage the local development environment, unifying service names and ports for the database, backend, and frontend, making it consistent with CI/CD configuration.
+- The database service name should be `postgres`, port 5432, username/password both `postgres`/`password`.
+- For frontend development, use `npm run build` and copy the build output to backend/wwwroot before publishing the backend.
+- It is recommended to add `wait-on` to `frontend/package.json` devDependencies to speed up CI/CD.
+- Sensitive information (such as database connection, OAuth secrets) should be managed via environment variables or .env files, avoid hardcoding.
+- Logs should be output to a local logs directory for easier debugging.
+- The health check endpoint `/api/health` should reflect the status of the database and dependent services.
+
+### Example docker-compose.yml
+```yaml
+db:
+  image: postgres:15
+  environment:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: password
+    POSTGRES_DB: postgres
+  ports:
+    - "5432:5432"
+backend:
+  build: ./backend
+  environment:
+    ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=password"
+  depends_on:
+    - db
+  ports:
+    - "55555:55555"
+frontend:
+  build: ./frontend
+  ports:
+    - "55556:55556"
+```
+
+---
+
+## 🔄 CI/CD Pipeline Best Practice
+
+- CI/CD uses GitHub Actions, with the database started via `services:` and the service name as `postgres`.
+- The backend container joins the same network with `--network ${{ job.container.network }}` and uses `Host=postgres;Port=5432;...` in the connection string.
+- Only keep `/api/health` for health checks, with a recommended timeout of 3 minutes.
+- Log artifacts are automatically uploaded, and backend container logs are output on failure.
+- Docker images are multi-tagged (latest, sha, run_number) for rollback and traceability.
+- All sensitive information is injected via GitHub Secrets/environment variables.
+- It is recommended to add `wait-on` to devDependencies to avoid npx temporary installs.
+
+### Key workflow snippet
+```yaml
+services:
+  postgres:
+    image: postgres:15
+    env:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - 5432:5432
+
+- name: Start backend container
+  run: |
+    docker run -d --name medicaltracker-e2e \
+      --network ${{ job.container.network }} \
+      -e ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=password" \
+      -p 55555:55555 ${{ env.GHCR_IMAGE }}:${{ github.sha }}
+
+- name: Wait for backend /api/health
+  timeout-minutes: 3
+  run: npx wait-on http://localhost:55555/api/health
+
+- name: Show backend container logs if healthcheck fails
+  if: failure()
+  run: docker logs medicaltracker-e2e || true
+
+- name: Upload backend log for Cypress debugging
+  if: always()
+  uses: actions/upload-artifact@v4
+  with:
+    name: backend-log
+    path: backend-publish/logs/
+```
+
+---
+
 ## 🤝 Contributing
 
 1. Fork the repository

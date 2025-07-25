@@ -71,11 +71,11 @@ jobs:
           -p 55555:55555 ${{ env.GHCR_IMAGE }}:${{ github.sha }}
 
     - name: Wait for backend /api/health
-      timeout-minutes: 3
+      timeout-minutes: 1
       run: npx wait-on http://localhost:55555/api/health
 
     - name: Show backend container logs if healthcheck fails
-      if: failure()
+      if: always()
       run: docker logs medicaltracker-e2e || true
 
     - name: Run Cypress E2E
