@@ -60,7 +60,6 @@ jobs:
         dotnet publish -c Release -o ../backend-publish
 
     - name: List workspace contents before Docker build
-      run: ls -l
 
     - name: Build Docker image
       run: |
@@ -74,13 +73,13 @@ jobs:
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/health
 
-    - name: Wait for backend /health
-      timeout-minutes: 1
-      run: npx wait-on http://localhost:55555/health
-
     - name: Wait for backend /api/health
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/api/health
+
+    - name: Show backend container logs if healthcheck fails
+      if: failure()
+      run: docker logs medicaltracker-e2e || true
 
     - name: Run Cypress E2E
       run: npx cypress run --config baseUrl=http://localhost:55555
@@ -97,33 +96,6 @@ jobs:
       with:
         name: cypress-videos
         path: frontend/cypress/videos
-    - name: Show host root directory (pwd)
-      if: always()
-      run: pwd
-    - name: List host root directory
-      if: always()
-      run: ls -l
-    - name: Show backend directory (pwd)
-      if: always()
-      run: pwd
-    - name: List backend directory
-      if: always()
-      run: ls -l backend || true
-    - name: List backend logs directory (debug)
-      if: always()
-      run: docker cp medicaltracker-test:/app/logs - | tar -tvf - || true
-    - name: List container /app/logs directory
-      if: always()
-      run: docker exec medicaltracker-test ls -l /app/logs || true
-    - name: Copy backend logs from container
-      if: always()
-      run: docker cp medicaltracker-test:/app/logs ./logs || true
-    - name: Show logs directory after copy (pwd)
-      if: always()
-      run: pwd
-    - name: List logs directory after copy
-      if: always()
-      run: ls -l logs || true
     - name: Upload backend log for Cypress debugging
       if: always()
       uses: actions/upload-artifact@v4
