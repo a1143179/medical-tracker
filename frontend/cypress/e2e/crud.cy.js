@@ -19,8 +19,10 @@ describe('Medical Tracker CRUD Flow', () => {
     // Wait for dashboard to load
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
     // Wait until the value types dropdown is loaded and contains at least one option
-    // Use data-testid for more robust selection
     cy.get('[data-testid="value-type-dropdown"]').should('be.visible');
+    // 选择 Blood Sugar 选项（假设 id=1，或通过文本匹配）
+    cy.get('[data-testid="value-type-dropdown"]').click();
+    cy.get('[data-testid="value-type-option-1"], [data-testid^="value-type-option-"]').contains(/Blood Sugar|血糖/).click();
     // Check that the value-type input exists and has a non-empty value
     cy.get('[data-testid="value-type-dropdown"] input', { timeout: 10000 })
       .should('exist')
