@@ -49,12 +49,20 @@ jobs:
         rm -rf backend/wwwroot/*
         cp -r frontend/build/. backend/wwwroot/
     
+    - name: Debug list frontend/build contents
+      run: ls -la frontend/build/
+    
     - name: list backend/wwwroot after copy
-      run: ls -l backend/wwwroot
+      run: ls -la backend/wwwroot
+      
+    - name: Verify logo-blue.png exists in build
+      run: test -f frontend/build/logo-blue.png && echo "logo-blue.png exists" || echo "logo-blue.png NOT found"
+      
     - name: copy logo-blue.png explicitly
       run: cp frontend/build/logo-blue.png backend/wwwroot/    
+      
     - name: Debug list backend/wwwroot after explicit copy
-      run: ls -l backend/wwwroot
+      run: ls -la backend/wwwroot
 
     - name: Setup .NET 9.0
       uses: actions/setup-dotnet@v4
