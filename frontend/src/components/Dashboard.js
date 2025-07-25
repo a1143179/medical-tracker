@@ -559,6 +559,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 onChange={(e) => handleValueTypeChange(e.target.value)}
                 displayEmpty
                 sx={{ mt: 1 }}
+                inputProps={{ 'data-testid': 'value-type-native-input' }}
                 MenuProps={{
                   PaperProps: {
                     sx: { 
@@ -970,6 +971,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={t('medicalValueTypeLabel')}
                 name="valueTypeId"
                 onChange={handleInputChange}
+                inputProps={{ 'data-testid': 'value-type-native-input' }}
                 MenuProps={{
                   PaperProps: {
                     sx: { 
