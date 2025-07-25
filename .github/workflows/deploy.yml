@@ -50,8 +50,10 @@ jobs:
         cp -r frontend/build/. backend/wwwroot/
     - name: Debug: list backend/wwwroot after copy
       run: ls -l backend/wwwroot
+
     - name: Debug: copy logo-blue.png explicitly
       run: cp frontend/build/logo-blue.png backend/wwwroot/ || true
+
     - name: Debug: list backend/wwwroot after explicit copy
       run: ls -l backend/wwwroot
 
