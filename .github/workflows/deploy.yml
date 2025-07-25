@@ -66,6 +66,7 @@ jobs:
     - name: Start backend container
       run: |
         docker run -d --name medicaltracker-e2e \
+          --add-host=host.docker.internal:host-gateway \
           -e ConnectionStrings__DefaultConnection="Host=host.docker.internal;Port=5432;Database=postgres;Username=postgres;Password=password" \
           -p 55555:55555 medicaltracker-e2e:latest
 
