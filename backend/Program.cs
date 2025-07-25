@@ -215,10 +215,7 @@ startupLogger.LogInformation("Application starting up. Environment: {Environment
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (!app.Environment.IsEnvironment("Test"))
-    {
-        context.Database.Migrate();
-    }
+    context.Database.Migrate();
 }
 
 // Middleware
