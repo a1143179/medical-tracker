@@ -57,18 +57,17 @@ jobs:
         dotnet publish -c Release -o ../backend-publish
     - name: Build and run Docker image for integration tests
       run: |
-        docker build --no-cache -t medicaltracker-test:latest .
-        docker run -d --name medicaltracker-test -p 55555:8080 \
-          -e ASPNETCORE_ENVIRONMENT=Test \
-          -e ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=password" \
-          medicaltracker-test:latest
+        cd backend-publish
+        ASPNETCORE_ENVIRONMENT=Test \
+        ConnectionStrings__DefaultConnection="Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=password" \
+        dotnet backend.dll &
     - name: Wait for backend
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/health
       working-directory: ./frontend
     - name: Show backend container logs if healthcheck fails
       if: failure()
-      run: docker logs medicaltracker-test || true
+      run: cat backend-publish/logs/app.log || true
     - name: Debug testlogin route
       run: |
         curl -i http://localhost:55555/api/auth/testlogin || true
