@@ -113,8 +113,6 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GHCR_PAT_TOKEN }}
-    - name: Pull built image
-      run: docker pull ${{ env.GHCR_IMAGE }}:${{ github.sha }}
     - name: Push Docker image
       run: |
         docker push ${{ env.GHCR_IMAGE }}:${{ github.sha }}
