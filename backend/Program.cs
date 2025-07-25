@@ -155,10 +155,7 @@ else
 
 // Database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var isTestEnv = builder.Environment.EnvironmentName == "Test";
-if (isTestEnv) {
-    builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("TestDb"));
-} else if (!string.IsNullOrEmpty(connectionString)) {
+if (!string.IsNullOrEmpty(connectionString)) {
     builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 } else {
     builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("BloodSugarHistoryDb"));
