@@ -18,6 +18,9 @@ describe('Medical Tracker CRUD Flow', () => {
     });
     // Wait for dashboard to load
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
+    // Wait until the value types dropdown is loaded and contains at least one option
+    cy.get('select[name="valueTypeId"]', { timeout: 10000 }).should('exist');
+    cy.get('select[name="valueTypeId"] option').should('have.length.greaterThan', 0);
   });
 
   it('should add, update, and delete a record', () => {
