@@ -43,17 +43,7 @@ jobs:
       run: npm run build
       working-directory: ./frontend
 
-    - name: Copy static files from public to build
-      run: |
-        echo "Listing public directory contents:"
-        ls -la frontend/public/
-        echo "Copying static files..."
-        cp -r frontend/public/* frontend/build/
-        echo "Static files copied to build directory"
-        echo "Verifying copy operation..."
-        ls -la frontend/build/
-    
-    - name: Debug list frontend/build contents after static copy
+    - name: Debug list frontend/build contents
       run: ls -la frontend/build/
 
     - name: Copy frontend build to backend wwwroot
