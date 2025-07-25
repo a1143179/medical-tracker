@@ -57,9 +57,10 @@ jobs:
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
-    - name: Build Docker image
-      run: |
-        docker build -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} -t ${{ env.GHCR_IMAGE }}:latest -t ${{ env.GHCR_IMAGE }}:${{ github.run_number }} .
+    - name: Run Cypress E2E
+      run: npx cypress run --config baseUrl=http://localhost:55555
+      working-directory: ./frontend
+
     - name: Push Docker image
       run: |
         docker push ${{ env.GHCR_IMAGE }}:${{ github.sha }}
@@ -78,9 +79,6 @@ jobs:
     - name: Show backend container logs if healthcheck fails
       if: failure()
       run: docker logs medicaltracker-e2e || true
-    - name: Run Cypress E2E
-      run: npx cypress run --config baseUrl=http://localhost:55555
-      working-directory: ./frontend
     - name: Upload Cypress screenshots
       if: always()
       uses: actions/upload-artifact@v4
