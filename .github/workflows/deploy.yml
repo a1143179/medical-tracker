@@ -1,4 +1,4 @@
-name: Deploy Medical Tracker to Azure
+name: Build Medical Tracker
 
 on:
   push:
