@@ -15,6 +15,7 @@ services:
 
   backend:
     build: ./backend
+    command: ["dotnet", "watch", "run", "--urls", "http://0.0.0.0:55555"]
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=postgres;Username=postgres;Password=password"
@@ -28,6 +29,7 @@ services:
 
   frontend:
     build: ./frontend
+    command: ["npm", "start"]
     ports:
       - "55556:55556"
     volumes:
