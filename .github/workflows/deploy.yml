@@ -104,6 +104,10 @@ jobs:
       with:
         name: backend-log
         path: backend-publish/logs/ 
+    - name: Ensure backend log dir exists
+      run: mkdir -p backend-publish/logs && touch backend-publish/logs/.keep
+    - name: Ensure Cypress screenshots dir exists
+      run: mkdir -p frontend/cypress/screenshots && touch frontend/cypress/screenshots/.keep
     - name: Log in to GitHub Container Registry
       if: github.ref == 'refs/heads/main'
       run: echo "${{ secrets.GHCR_PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
