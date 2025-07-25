@@ -554,7 +554,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             </Typography>
             <FormControl fullWidth size="small">
               <Select
-                data-testid="value-type-selector"
+                data-testid="value-type-dropdown"
                 value={selectedValueType}
                 onChange={(e) => handleValueTypeChange(e.target.value)}
                 displayEmpty
@@ -964,6 +964,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             <FormControl fullWidth margin="normal">
               <InputLabel id="mobile-edit-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
               <Select
+                data-testid="value-type-dropdown"
                 labelId="mobile-edit-value-type-label"
                 value={currentRecord.valueTypeId}
                 label={t('medicalValueTypeLabel')}
@@ -989,7 +990,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 }}
               >
                 {valueTypes.map((valueType) => (
-                  <MenuItem key={valueType.id} value={valueType.id}>
+                  <MenuItem key={valueType.id} value={valueType.id} data-testid={`value-type-option-${valueType.id}`}>
                     {getLocalizedValueTypeName(valueType)}
                   </MenuItem>
                 ))}
@@ -1133,7 +1134,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                         </Typography>
                         <FormControl fullWidth size="small">
                           <Select
-                            data-testid="value-type-selector"
+                            data-testid="value-type-dropdown"
                             value={selectedValueType}
                             onChange={(e) => handleValueTypeChange(e.target.value)}
                             displayEmpty
