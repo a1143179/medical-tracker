@@ -22,6 +22,7 @@ import {
 import { Logout, Language, Menu as MenuIcon, Dashboard, Person } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useLocation } from 'react-router-dom';
 
 const Header = ({ onMobileNavigate }) => {
   const { user, logout } = useAuth();
@@ -29,6 +30,7 @@ const Header = ({ onMobileNavigate }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const location = useLocation();
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -65,7 +67,9 @@ const Header = ({ onMobileNavigate }) => {
         sx={{ 
           zIndex: (theme) => theme.zIndex.drawer + 1,
           position: { xs: 'fixed', md: 'static' },
-          boxShadow: '0 4px 16px 0 rgba(0,0,0,0.5)'
+          boxShadow: '0 4px 16px 0 rgba(0,0,0,0.5)',
+          pt: '10px',
+          pb: '10px'
         }}
       >
         <Toolbar>
@@ -81,18 +85,20 @@ const Header = ({ onMobileNavigate }) => {
               <MenuIcon />
             </IconButton>
 
-            {/* Logo Only */}
-            <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-              <Box sx={{ 
-                width: { xs: 120, sm: 130, md: 150, lg: 180 },
-                height: { xs: 40, sm: 43, md: 50, lg: 60 },
-                mr: 1, 
-                display: { xs: 'flex', md: 'flex' },
-                bgcolor: 'transparent'
-              }}>
-                <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            {/* Logo Only (not on login page) */}
+            {location.pathname !== '/login' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                <Box sx={{ 
+                  width: { xs: 120, sm: 130, md: 150, lg: 180 },
+                  height: { xs: 40, sm: 43, md: 50, lg: 60 },
+                  mr: 1, 
+                  display: { xs: 'flex', md: 'flex' },
+                  bgcolor: 'transparent'
+                }}>
+                  <img src="/logo.png" alt="Medical Tracker Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                </Box>
               </Box>
-            </Box>
+            )}
             
             {/* Language Selector and Profile Icon Container */}
             <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>

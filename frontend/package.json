@@ -22,29 +22,36 @@
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.0",
     "cross-env": "^7.0.3",
-    "cypress": "^13.6.0",
+    "cypress": "^13.17.0",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "husky": "^9.1.7",
+    "jsonwebtoken": "^9.0.2",
     "lint-staged": "^16.1.2",
-    "start-server-and-test": "^2.0.3"
+    "start-server-and-test": "^2.0.3",
+    "wait-on": "^8.0.3"
   },
   "scripts": {
-    "start": "set PORT=55556 && react-scripts start",
+    "start": "cross-env PORT=55556 react-scripts start",
     "build": "react-scripts build",
     "build:azure": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
     "build:production": "set \"NODE_ENV=production\" && set \"GENERATE_SOURCEMAP=false\" && set \"CI=false\" && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "start:test": "cross-env PORT=55556 react-scripts start",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
-    "test:e2e": "start-server-and-test start http://localhost:55555 cypress:run",
-    "test:e2e:open": "start-server-and-test start http://localhost:55555 cypress:open",
-    "cypress:open:debug": "cross-env DEBUG=cypress:* npx cypress open",
-    "cypress:run:debug": "cross-env DEBUG=cypress:* npx cypress run",
+    "cypress:run:headless": "cypress run --headless",
+    "cypress:run:debug": "cross-env DEBUG=cypress:* cypress run",
+    "cypress:run:headless:debug": "cross-env DEBUG=cypress:* cypress run --headless",
+    "test:e2e": "start-server-and-test start http://localhost:3000 cypress:run:headless",
+    "test:e2e:debug": "start-server-and-test start http://localhost:3000 cypress:run:headless:debug",
+    "test:e2e:open": "start-server-and-test start http://localhost:3000 cypress:open",
     "serve": "npx serve -s build -l 3000",
-    "lint": "eslint --ext .js,.jsx src"
+    "lint": "eslint --ext .js,.jsx src",
+    "test:smoke": "cypress run --spec 'cypress/e2e/smoke-tests.cy.js' --headless",
+    "test:smoke:debug": "cross-env DEBUG=cypress:* cypress run --spec 'cypress/e2e/smoke-tests.cy.js' --headless"
   },
   "eslintConfig": {
     "extends": [

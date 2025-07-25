@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authentication.Google;
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace Backend.Controllers;
 
@@ -33,12 +35,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("login")]
-    public IActionResult Login(string returnUrl = "/", bool rememberMe = false)
+    public IActionResult Login(string returnUrl = "/dashboard", bool rememberMe = false)
     {
+        // Remove fake login related code, only keep normal Google OAuth login logic
         // Check if Google OAuth is configured
         var googleClientId = _configuration["Google:Client:ID"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
         var googleClientSecret = _configuration["Google:Client:Secret"] ?? Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
-        
         if (string.IsNullOrEmpty(googleClientId) || string.IsNullOrEmpty(googleClientSecret))
         {
             // Return a proper HTML error page for browser requests
@@ -55,10 +57,8 @@ public class AuthController : ControllerBase
                         </body>
                     </html>", "text/html");
             }
-            
             return BadRequest(new { message = "Google OAuth is not configured. Please add Google:ClientId and Google:ClientSecret to your configuration." });
         }
-
         var properties = new AuthenticationProperties
         {
             RedirectUri = "/api/auth/callback",
@@ -72,7 +72,6 @@ public class AuthController : ControllerBase
             IsPersistent = true,
             ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(30)
         };
-
         // In production, ensure the redirect URI uses HTTPS
         if (!_environment.IsDevelopment())
         {
@@ -81,7 +80,6 @@ public class AuthController : ControllerBase
             var redirectUri = $"https://{host}/api/auth/callback";
             properties.RedirectUri = redirectUri;
         }
-
         // Use the authentication middleware to challenge Google OAuth
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
@@ -98,44 +96,68 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        // Get token from Authorization header or cookie
-        var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") 
-                   ?? Request.Cookies["MedicalTracker.Auth.JWT"];
-        
+        // Log all cookies for debugging
+        _logger.LogInformation("/api/auth/me called. All cookies: {Cookies}", string.Join("; ", Request.Cookies.Select(kv => kv.Key + "=" + kv.Value)));
+        // Log all request headers
+        foreach (var header in Request.Headers)
+        {
+            _logger.LogInformation("Header: {Key} = {Value}", header.Key, header.Value);
+        }
+        // Log User-Agent
+        _logger.LogInformation("User-Agent: {UserAgent}", Request.Headers["User-Agent"].ToString());
+        // Log raw Cookie header
+        _logger.LogInformation("Raw Cookie header: {Cookie}", Request.Headers["Cookie"].ToString());
+        // Get JWT token from cookies
+        var token = Request.Cookies["MedicalTracker.Auth.JWT"];
+        _logger.LogInformation("JWT cookie value: {Token}", token);
         if (string.IsNullOrEmpty(token))
         {
+            _logger.LogWarning("No JWT token found in cookies");
             return Unauthorized();
         }
-
-        var email = _jwtService.GetUserEmailFromToken(token);
-        if (string.IsNullOrEmpty(email))
+        try
         {
+            var principal = _jwtService.ValidateToken(token);
+            if (principal == null)
+            {
+                _logger.LogWarning("JWT token validation failed for token: {Token}", token);
+                return Unauthorized();
+            }
+            var email = principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+            _logger.LogInformation("JWT validated. Email: {Email}", email);
+            if (string.IsNullOrEmpty(email))
+            {
+                _logger.LogWarning("Invalid JWT token - no email found");
+                return Unauthorized();
+            }
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for email: {Email}", email);
+                return Unauthorized();
+            }
+            var userDto = new UserDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Name = user.Name,
+                PreferredValueTypeId = user.PreferredValueTypeId
+            };
+            _logger.LogInformation("Successfully authenticated user: {Email}", email);
+            return Ok(userDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing JWT token");
             return Unauthorized();
         }
-
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-        if (user == null)
-        {
-            return Unauthorized();
-        }
-
-        var userDto = new UserDto
-        {
-            Id = user.Id,
-            Email = user.Email,
-            Name = user.Name,
-            PreferredValueTypeId = user.PreferredValueTypeId
-        };
-
-        return Ok(userDto);
     }
 
     [HttpPut("preferred-value-type")]
     public async Task<IActionResult> UpdatePreferredValueType([FromBody] UpdatePreferredValueTypeDto dto)
     {
-        // Get token from Authorization header or cookie
-        var token = Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "") 
-                   ?? Request.Cookies["MedicalTracker.Auth.JWT"];
+        // Get token from cookie only
+        var token = Request.Cookies["MedicalTracker.Auth.JWT"];
         
         if (string.IsNullOrEmpty(token))
         {
@@ -165,5 +187,37 @@ public class AuthController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok(new { message = "Preferred value type updated successfully" });
+    }
+
+    [HttpGet("testlogin")]
+    public async Task<IActionResult> TestLogin()
+    {
+        _logger.LogInformation("TestLogin endpoint called.");
+        _logger.LogInformation("Environment: {Environment}", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
+        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "";
+        if (!(env.Contains("Development") || env.Contains("Test")))
+            return Unauthorized();
+        var testEmail = "testuser@e2e.com";
+        var testUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == testEmail);
+        if (testUser == null)
+        {
+            testUser = new User
+            {
+                Email = testEmail,
+                Name = "E2E Test User",
+                GoogleId = "e2e-test-google-id"
+            };
+            _context.Users.Add(testUser);
+            await _context.SaveChangesAsync();
+        }
+        var jwt = _jwtService.GenerateToken(testUser);
+        Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, new CookieOptions
+        {
+            HttpOnly = false, // Allow Cypress to read
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
+            Path = "/"
+        });
+        return Redirect("/dashboard");
     }
 } 

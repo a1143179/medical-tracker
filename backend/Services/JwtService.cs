@@ -17,18 +17,20 @@ public class JwtService : IJwtService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<JwtService> _logger;
+    private readonly IWebHostEnvironment _env;
 
-    public JwtService(IConfiguration configuration, ILogger<JwtService> logger)
+    public JwtService(IConfiguration configuration, ILogger<JwtService> logger, IWebHostEnvironment env)
     {
         _configuration = configuration;
         _logger = logger;
+        _env = env;
     }
 
     public string GenerateToken(User user, bool rememberMe = false)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
-        var jwtIssuer = "https://medicaltracker.azurewebsites.net";
-        var jwtAudience = "https://medicaltracker.azurewebsites.net";
+        var jwtIssuer = _configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "https://medicaltracker.azurewebsites.net";
+        var jwtAudience = _configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "https://medicaltracker.azurewebsites.net";
 
         if (string.IsNullOrEmpty(jwtKey))
         {
@@ -69,11 +71,12 @@ public class JwtService : IJwtService
 
     public ClaimsPrincipal? ValidateToken(string token)
     {
+        // Always validate the JWT token, even in Test environment
         try
         {
             var jwtKey = _configuration["Jwt:Key"] ?? Environment.GetEnvironmentVariable("JWT_KEY");
-            var jwtIssuer = "https://medicaltracker.azurewebsites.net";
-            var jwtAudience = "https://medicaltracker.azurewebsites.net";
+            var jwtIssuer = _configuration["Jwt:Issuer"] ?? Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "https://medicaltracker.azurewebsites.net";
+            var jwtAudience = _configuration["Jwt:Audience"] ?? Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "https://medicaltracker.azurewebsites.net";
 
             if (string.IsNullOrEmpty(jwtKey))
             {
@@ -97,10 +100,7 @@ public class JwtService : IJwtService
             };
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
-            
-            _logger.LogDebug("JWT token validated successfully for user {Email}", 
-                principal.FindFirst(ClaimTypes.Email)?.Value);
-            
+            _logger.LogDebug("JWT token validated successfully for user {Email}", principal.FindFirst(ClaimTypes.Email)?.Value);
             return principal;
         }
         catch (Exception ex)

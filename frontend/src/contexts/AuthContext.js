@@ -32,7 +32,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   const loginWithGoogle = (e, rememberMe = false) => {
-    const loginUrl = `/api/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}&rememberMe=${rememberMe}`;
+    let loginUrl = `/api/auth/login?returnUrl=${encodeURIComponent(window.location.pathname)}&rememberMe=${rememberMe}`;
+    // 如果事件对象存在且有 data-redirect-url 属性，则用它
+    if (e && e.target && e.target.getAttribute) {
+      const customUrl = e.target.getAttribute('data-redirect-url');
+      if (customUrl) {
+        loginUrl = customUrl;
+      }
+    }
     console.log('Redirecting to login URL:', loginUrl);
     window.location.href = loginUrl;
   };
