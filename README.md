@@ -393,15 +393,37 @@ The project provides platform-specific startup scripts:
 - **Compression**: Automatic response compression
 - **Single Container**: Reduced deployment complexity and resource usage
 
-## 🧑‍💻 Local Development Best Practice
+## 🏃 Local Development (Best Practice)
 
-- It is recommended to use `docker-compose.yml` to manage the local development environment, unifying service names and ports for the database, backend, and frontend, making it consistent with CI/CD configuration.
-- The database service name should be `postgres`, port 5432, username/password both `postgres`/`password`.
-- For frontend development, use `npm run build` and copy the build output to backend/wwwroot before publishing the backend.
-- It is recommended to add `wait-on` to `frontend/package.json` devDependencies to speed up CI/CD.
-- Sensitive information (such as database connection, OAuth secrets) should be managed via environment variables or .env files, avoid hardcoding.
-- Logs should be output to a local logs directory for easier debugging.
-- The health check endpoint `/api/health` should reflect the status of the database and dependent services.
+1. **Install Docker Desktop** and make sure it is running.
+2. **Clone the repository** and enter the project directory:
+   ```bash
+   git clone https://github.com/a1143179/medical-tracker.git
+   cd medicaltracker
+   ```
+3. **Start all services with Docker Compose**:
+   ```bash
+   docker-compose up --build
+   ```
+   This will start:
+   - PostgreSQL database (service name: `postgres`, port: 5432)
+   - Backend (.NET, port: 55555, connects to postgres)
+   - Frontend (React, port: 55556)
+
+4. **Access the app**:
+   - Frontend: http://localhost:55556
+   - Backend API: http://localhost:55555/api
+   - Database: localhost:5432 (user: postgres, password: password, db: postgres)
+
+5. **Stop all services**:
+   ```bash
+   docker-compose down
+   ```
+
+> **Note:**  
+> - All environment variables and connection strings are managed via `docker-compose.yml` and `.env` file (if needed).
+> - For local development, logs are written to the backend/logs directory.
+> - Health check endpoint: `http://localhost:55555/api/health`
 
 ### Example docker-compose.yml
 ```yaml
