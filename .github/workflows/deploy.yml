@@ -49,6 +49,11 @@ jobs:
         rm -rf backend/wwwroot/*
         cp -r frontend/build/* backend/wwwroot/
 
+    - name: Setup .NET 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        include-prerelease: true
     - name: Publish backend
       run: |
         cd backend
