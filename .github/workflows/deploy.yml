@@ -48,6 +48,12 @@ jobs:
         mkdir -p backend/wwwroot
         rm -rf backend/wwwroot/*
         cp -r frontend/build/. backend/wwwroot/
+    - name: Debug: list backend/wwwroot after copy
+      run: ls -l backend/wwwroot
+    - name: Debug: copy logo-blue.png explicitly
+      run: cp frontend/build/logo-blue.png backend/wwwroot/ || true
+    - name: Debug: list backend/wwwroot after explicit copy
+      run: ls -l backend/wwwroot
 
     - name: Setup .NET 9.0
       uses: actions/setup-dotnet@v4
@@ -79,8 +85,8 @@ jobs:
     - name: Wait for backend /api/health
       timeout-minutes: 3
       run: npx wait-on http://localhost:55555/api/health
-    - name: Show backend container logs if healthcheck fails
-      if: failure()
+    - name: Show backend container logs
+      if: always()
       run: docker logs medicaltracker-e2e || true
     - name: Run Cypress E2E
       run: npx cypress run --config baseUrl=http://localhost:55555
@@ -98,10 +104,6 @@ jobs:
       with:
         name: cypress-videos
         path: frontend/cypress/videos
-    - name: Ensure backend log dir exists
-      run: mkdir -p backend-publish/logs && touch backend-publish/logs/.keep
-    - name: Ensure Cypress screenshots dir exists
-      run: mkdir -p frontend/cypress/screenshots && touch frontend/cypress/screenshots/.keep
     - name: Upload backend log for Cypress debugging
       if: always()
       uses: actions/upload-artifact@v4
