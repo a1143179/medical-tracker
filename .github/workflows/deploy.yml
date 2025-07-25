@@ -42,6 +42,12 @@ jobs:
     - name: Build frontend
       run: npm run build
       working-directory: ./frontend
+
+    - name: Copy frontend build to backend wwwroot
+      run: |
+        rm -rf backend/wwwroot/*
+        cp -r frontend/build/* backend/wwwroot/
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -68,7 +74,7 @@ jobs:
         ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=password" \
         ASPNETCORE_URLS="http://0.0.0.0:55555" \
         dotnet backend.dll &
-    - name: Wait for backend
+    - name: Wait for frontend /health
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/health
       working-directory: ./frontend
@@ -82,16 +88,9 @@ jobs:
     - name: Debug testlogin route
       run: |
         curl -i http://localhost:55555/api/auth/testlogin || true
-    - name: Run Cypress E2E (headless mode)
-      uses: cypress-io/github-action@v6
-      with:
-        working-directory: ./frontend
-        start: ''
-        wait-on: 'http://localhost:55555'
-        wait-on-timeout: 120
-        browser: chrome
-        headless: true
-        config: baseUrl=http://localhost:55555
+    - name: Run Cypress E2E
+      run: npx cypress run --config baseUrl=http://localhost:55555
+      working-directory: ./frontend
     - name: Upload Cypress screenshots
       if: always()
       uses: actions/upload-artifact@v4
