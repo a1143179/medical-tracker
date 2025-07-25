@@ -45,6 +45,7 @@ jobs:
 
     - name: Copy frontend build to backend wwwroot
       run: |
+        mkdir -p backend/wwwroot
         rm -rf backend/wwwroot/*
         cp -r frontend/build/* backend/wwwroot/
 
