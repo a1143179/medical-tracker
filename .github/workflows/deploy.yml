@@ -59,9 +59,16 @@ jobs:
         dotnet publish -c Release -o ../backend-publish
     - name: Build Docker image
       run: docker build -t medicaltracker-e2e:local .
-    - name: Log in to GitHub Container Registry
+    - name: Login and Push Docker image
       if: github.ref == 'refs/heads/main'
-      run: echo "${{ secrets.GHCR_PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      run: |
+        echo "${{ secrets.GHCR_PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        docker tag medicaltracker-e2e:local ${{ env.GHCR_IMAGE }}:${{ github.sha }}
+        docker tag medicaltracker-e2e:local ${{ env.GHCR_IMAGE }}:latest
+        docker tag medicaltracker-e2e:local ${{ env.GHCR_IMAGE }}:${{ github.run_number }}
+        docker push ${{ env.GHCR_IMAGE }}:${{ github.sha }}
+        docker push ${{ env.GHCR_IMAGE }}:latest
+        docker push ${{ env.GHCR_IMAGE }}:${{ github.run_number }}
     - name: Start backend container
       run: |
         docker run -d --name medicaltracker-e2e \
