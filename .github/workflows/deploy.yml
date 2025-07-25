@@ -55,8 +55,6 @@ jobs:
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
-    - name: Show AuthController.cs (first 1000 lines)
-      run: head -1000 backend/Controllers/AuthController.cs
     - name: Build and run Docker image for integration tests
       run: |
         docker build --no-cache -t medicaltracker-test:latest .
@@ -67,6 +65,9 @@ jobs:
     - name: Wait for backend
       run: npx wait-on http://localhost:55555/health
       working-directory: ./frontend
+    - name: Show backend container logs if healthcheck fails
+      if: failure()
+      run: docker logs medicaltracker-test || true
     - name: Debug testlogin route
       run: |
         curl -i http://localhost:55555/api/auth/testlogin || true
