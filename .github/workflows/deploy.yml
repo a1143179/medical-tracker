@@ -55,6 +55,15 @@ jobs:
       run: |
         cd backend
         dotnet publish -c Release -o ../backend-publish
+    - name: Wait for PostgreSQL
+      run: |
+        for i in {1..30}; do
+          nc -z postgres 5432 && echo "Postgres is up" && exit 0
+          echo "Waiting for postgres..."
+          sleep 2
+        done
+        echo "Postgres did not become available in time" >&2
+        exit 1
     - name: Build and run Docker image for integration tests
       run: |
         cd backend-publish
