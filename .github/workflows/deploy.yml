@@ -77,6 +77,10 @@ jobs:
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/health
       working-directory: ./frontend
+    - name: Wait for backend /api/health
+      timeout-minutes: 1
+      run: npx wait-on http://localhost:55555/api/health
+      working-directory: ./frontend
     - name: Show backend container logs if healthcheck fails
       if: failure()
       run: cat backend-publish/logs/app.log || true
