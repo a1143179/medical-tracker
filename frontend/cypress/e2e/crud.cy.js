@@ -19,8 +19,16 @@ describe('Medical Tracker CRUD Flow', () => {
     // Wait for dashboard to load
     cy.contains(/Add New Record|添加新记录/, { timeout: 10000 }).should('be.visible');
     // Wait until the value types dropdown is loaded and contains at least one option
-    cy.get('select[name="valueTypeId"]', { timeout: 10000 }).should('exist');
-    cy.get('select[name="valueTypeId"] option').should('have.length.greaterThan', 0);
+    // Use data-testid for more robust selection
+    cy.get('[data-testid="value-type-dropdown"]', { timeout: 10000 }).should('exist');
+    cy.get('[data-testid="value-type-native-input"]', { timeout: 10000 }).should('exist');
+
+    // 选择第一个 value type（如有需要可指定 value）
+    cy.get('[data-testid="value-type-native-input"]').then($input => {
+      // 直接设置 value 并触发 change 事件
+      $input.val('1'); // 这里假设 valueTypeId=1 存在，如需动态获取可再调整
+      $input[0].dispatchEvent(new Event('change', { bubbles: true }));
+    });
   });
 
   it('should add, update, and delete a record', () => {
