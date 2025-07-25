@@ -70,9 +70,17 @@ jobs:
       run: |
         docker run -d --name medicaltracker-e2e -p 55555:55555 medicaltracker-e2e:latest
 
+    - name: Wait for frontend /health
+      timeout-minutes: 1
+      run: npx wait-on http://localhost:55555/health
+
     - name: Wait for backend /health
       timeout-minutes: 1
       run: npx wait-on http://localhost:55555/health
+
+    - name: Wait for backend /api/health
+      timeout-minutes: 1
+      run: npx wait-on http://localhost:55555/api/health
 
     - name: Run Cypress E2E
       run: npx cypress run --config baseUrl=http://localhost:55555
