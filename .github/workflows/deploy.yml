@@ -71,6 +71,7 @@ jobs:
         cd backend-publish
         ASPNETCORE_ENVIRONMENT=Test \
         ConnectionStrings__DefaultConnection="Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=password" \
+        ASPNETCORE_URLS="http://0.0.0.0:55555" \
         dotnet backend.dll &
     - name: Wait for backend
       timeout-minutes: 1
