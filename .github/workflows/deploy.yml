@@ -1,10 +1,10 @@
-name: Deploy Medical Tracker to Azure
+name: Build Medical Tracker
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ main, working ]
+    branches: [ "**" ]
 
 env:
   AZURE_WEBAPP_NAME: medicaltracker
@@ -43,16 +43,32 @@ jobs:
       run: npm run build
       working-directory: ./frontend
 
+    - name: Debug list frontend/build contents
+      run: ls -la frontend/build/
+
     - name: Copy frontend build to backend wwwroot
       run: |
         mkdir -p backend/wwwroot
         rm -rf backend/wwwroot/*
-        cp -r frontend/build/* backend/wwwroot/
+        cp -r frontend/build/. backend/wwwroot/
+    
+    - name: list backend/wwwroot after copy
+      run: ls -la backend/wwwroot
+      
+    - name: Verify logo-blue.png exists in build
+      run: test -f frontend/build/logo-blue.png && echo "logo-blue.png exists" || echo "logo-blue.png NOT found"
+      
+    - name: copy logo-blue.png explicitly
+      run: cp frontend/build/logo-blue.png backend/wwwroot/    
+      
+    - name: Debug list backend/wwwroot after explicit copy
+      run: ls -la backend/wwwroot
 
     - name: Setup .NET 9.0
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+    
     - name: Publish backend
       run: |
         cd backend
@@ -79,8 +95,8 @@ jobs:
     - name: Wait for backend /api/health
       timeout-minutes: 3
       run: npx wait-on http://localhost:55555/api/health
-    - name: Show backend container logs if healthcheck fails
-      if: failure()
+    - name: Show backend container logs
+      if: always()
       run: docker logs medicaltracker-e2e || true
     - name: Run Cypress E2E
       run: npx cypress run --config baseUrl=http://localhost:55555
@@ -104,13 +120,6 @@ jobs:
       with:
         name: backend-log
         path: backend-publish/logs/ 
-    - name: Ensure backend log dir exists
-      run: mkdir -p backend-publish/logs && touch backend-publish/logs/.keep
-    - name: Ensure Cypress screenshots dir exists
-      run: mkdir -p frontend/cypress/screenshots && touch frontend/cypress/screenshots/.keep
-    - name: Log in to GitHub Container Registry
-      if: github.ref == 'refs/heads/main'
-      run: echo "${{ secrets.GHCR_PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
   azure-deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest

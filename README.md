@@ -393,7 +393,7 @@ The project provides platform-specific startup scripts:
 - **Compression**: Automatic response compression
 - **Single Container**: Reduced deployment complexity and resource usage
 
-## 🏃 Local Development (Best Practice)
+## 🏃 Local Development (with Hot Reload)
 
 1. **Install Docker Desktop** and make sure it is running.
 2. **Clone the repository** and enter the project directory:
@@ -407,23 +407,24 @@ The project provides platform-specific startup scripts:
    ```
    This will start:
    - PostgreSQL database (service name: `postgres`, port: 5432)
-   - Backend (.NET, port: 55555, connects to postgres)
-   - Frontend (React, port: 55556)
+   - Backend (.NET, port: 55555, with hot reload)
+   - Frontend (React, port: 55556, with hot reload)
 
-4. **Access the app**:
+4. **Edit code locally**: Any changes in `./backend` or `./frontend` will be reflected in the running containers in real time.
+
+5. **Access the app**:
    - Frontend: http://localhost:55556
    - Backend API: http://localhost:55555/api
    - Database: localhost:5432 (user: postgres, password: password, db: postgres)
 
-5. **Stop all services**:
+6. **Stop all services**:
    ```bash
    docker-compose down
    ```
 
 > **Note:**  
-> - All environment variables and connection strings are managed via `docker-compose.yml` and `.env` file (if needed).
-> - For local development, logs are written to the backend/logs directory.
-> - Health check endpoint: `http://localhost:55555/api/health`
+> - For hot reload to work, your local files must be mounted into the containers (already configured).
+> - If you use Windows, WSL2 is recommended for best file sync performance.
 
 ### Example docker-compose.yml
 ```yaml
