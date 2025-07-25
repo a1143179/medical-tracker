@@ -46,11 +46,6 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
-    - name: Restore and build backend
-      run: |
-        cd backend
-        dotnet restore
-        dotnet build --no-restore -c Release
     - name: Publish backend
       run: |
         cd backend
