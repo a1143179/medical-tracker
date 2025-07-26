@@ -51,6 +51,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from 'recharts';
+import SaveToDesktopPopup from './SaveToDesktopPopup';
 
 // Backend API URL
 const API_URL = '/api/records';
@@ -1114,6 +1115,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         position: 'relative',
         overflow: 'hidden'
       }}>
+        <SaveToDesktopPopup />
         {isMobile ? (
           // Mobile Layout
           <Container maxWidth="xs" sx={{ py: 0, pt: 2, flexGrow: 1, px: 0 }}>
