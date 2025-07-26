@@ -50,7 +50,7 @@ public class JwtService : IJwtService
             new("remember_me", rememberMe.ToString().ToLower())
         };
 
-        var expiresIn = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24);
+        var expiresIn = rememberMe ? TimeSpan.FromDays(365) : TimeSpan.FromHours(24);
         var expiresAt = DateTime.UtcNow.Add(expiresIn);
 
         var token = new JwtSecurityToken(

@@ -124,7 +124,7 @@ else
                         HttpOnly = true,
                         Secure = !builder.Environment.IsDevelopment(),
                         SameSite = SameSiteMode.Lax,
-                        MaxAge = rememberMe ? TimeSpan.FromDays(30) : TimeSpan.FromHours(24)
+                        MaxAge = rememberMe ? TimeSpan.FromDays(365) : TimeSpan.FromHours(24)
                     };
                     context.HttpContext.Response.Cookies.Append("MedicalTracker.Auth.JWT", token, cookieOptions);
                 }
