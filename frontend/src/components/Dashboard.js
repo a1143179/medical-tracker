@@ -120,7 +120,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   
   // Memoize filtered records to prevent unnecessary re-renders
   const filteredRecords = useMemo(() => {
-    return records.filter(record => record.valueTypeId === selectedValueType);
+    return records
+      .filter(record => record.valueTypeId === selectedValueType)
+      .sort((a, b) => new Date(b.measurementTime) - new Date(a.measurementTime));
   }, [records, selectedValueType]);
   
 
