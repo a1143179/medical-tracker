@@ -35,6 +35,9 @@ const GoogleLogin = () => {
     setInvitationLoading(true);
     try {
       await loginWithInvitation(invitationCode, rememberMe);
+    } catch (error) {
+      console.error('Invitation login failed:', error);
+      // You might want to show an error message to the user here
     } finally {
       setInvitationLoading(false);
     }
@@ -189,7 +192,7 @@ const GoogleLogin = () => {
                     bgcolor: '#e0e0e0'
                   }
                 }}
-                disabled={invitationLoading || !invitationCode.trim()}
+                disabled={invitationLoading}
                 data-testid="invitation-login-button"
                 id="invitation-login-button"
               >
