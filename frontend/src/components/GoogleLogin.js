@@ -162,7 +162,7 @@ const GoogleLogin = () => {
                 onChange={(e) => setInvitationCode(e.target.value)}
                 variant="outlined"
                 size="small"
-                sx={{ mb: 2 }}
+                sx={{ mb: 2, width: '100%' }}
                 disabled={invitationLoading}
                 data-testid="invitation-code-input"
               />
@@ -177,6 +177,7 @@ const GoogleLogin = () => {
                   fontSize: '1rem', 
                   mb: 2,
                   bgcolor: '#1976d2',
+                  width: '100%',
                   '&:hover': {
                     bgcolor: '#1565c0'
                   },
