@@ -88,3 +88,12 @@ code {
 .MuiFormControl-root .MuiInput-root .MuiInput-input {
   background: transparent;
 }
+
+/* Invitation code input specific styling */
+#invitation-code-input .MuiOutlinedInput-root {
+  margin-left: 0 !important;
+}
+
+#invitation-code-input {
+  margin-left: 0 !important;
+}
