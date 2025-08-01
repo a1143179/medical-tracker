@@ -243,6 +243,9 @@ export const LanguageProvider = ({ children }) => {
       termsOfService: 'Terms of Service',
       and: 'and',
       privacyPolicy: 'Privacy Policy',
+      or: 'or',
+      invitationLoginCode: 'Invitation Login Code',
+      loginWithInvitation: 'Login with Invitation Code',
     },
     zh: {
       // App Bar
@@ -373,6 +376,9 @@ export const LanguageProvider = ({ children }) => {
       termsOfService: '服务条款',
       and: '和',
       privacyPolicy: '隐私政策',
+      or: '或',
+      invitationLoginCode: '邀请登录码',
+      loginWithInvitation: '使用邀请码登录',
     }
   };
 

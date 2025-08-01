@@ -84,6 +84,38 @@ public class AuthController : ControllerBase
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
+    [HttpPost("login-with-invitation")]
+    public async Task<IActionResult> LoginWithInvitation([FromBody] InvitationLoginDto dto)
+    {
+        if (string.IsNullOrEmpty(dto.InvitationCode))
+        {
+            return BadRequest(new { message = "Invitation code is required" });
+        }
+
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.InvitationCode == dto.InvitationCode);
+        if (user == null)
+        {
+            return Unauthorized(new { message = "Invalid invitation code" });
+        }
+
+        var jwt = _jwtService.GenerateToken(user, dto.RememberMe);
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = !_environment.IsDevelopment(),
+            SameSite = SameSiteMode.Lax,
+            MaxAge = dto.RememberMe ? TimeSpan.FromDays(365) : TimeSpan.FromHours(24)
+        };
+        Response.Cookies.Append("MedicalTracker.Auth.JWT", jwt, cookieOptions);
+
+        return Ok(new { message = "Login successful", user = new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Name = user.Name,
+            PreferredValueTypeId = user.PreferredValueTypeId
+        }});
+    }
 
     [HttpPost("logout")]
     public IActionResult Logout()

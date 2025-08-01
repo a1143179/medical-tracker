@@ -10,4 +10,7 @@ public class User
     
     // User's preferred medical value type
     public int PreferredValueTypeId { get; set; } = 1; // Default to Blood Sugar (ID 1)
+    
+    // Invitation code for login
+    public string? InvitationCode { get; set; }
 } 

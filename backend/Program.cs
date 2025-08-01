@@ -268,6 +268,19 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
+// Temporary endpoint to set invitation code for user ID 2
+app.MapGet("/api/set-invitation-code", async (AppDbContext context) =>
+{
+    var user = await context.Users.FirstOrDefaultAsync(u => u.Id == 2);
+    if (user != null)
+    {
+        user.InvitationCode = "20251957";
+        await context.SaveChangesAsync();
+        return Results.Ok(new { message = "Invitation code set successfully for user ID 2" });
+    }
+    return Results.NotFound(new { message = "User ID 2 not found" });
+});
+
 // SPA fallback: 所有未匹配的路由都返回 index.html
 app.MapFallbackToFile("index.html");
 
