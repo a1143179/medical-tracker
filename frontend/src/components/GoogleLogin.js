@@ -162,7 +162,7 @@ const GoogleLogin = () => {
                 onChange={(e) => setInvitationCode(e.target.value)}
                 variant="outlined"
                 size="small"
-                sx={{ mb: 2, width: '100%' }}
+                sx={{ width: '100%' }}
                 disabled={invitationLoading}
                 data-testid="invitation-code-input"
               />
