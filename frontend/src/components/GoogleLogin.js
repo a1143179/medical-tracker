@@ -164,9 +164,7 @@ const GoogleLogin = () => {
                 size="small"
                 sx={{ 
                   width: '100%',
-                  '& .MuiInputBase-root': {
-                    marginLeft: 0
-                  }
+                  marginLeft: 0
                 }}
                 disabled={invitationLoading}
                 data-testid="invitation-code-input"
