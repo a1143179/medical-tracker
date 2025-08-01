@@ -160,7 +160,7 @@ const GoogleLogin = () => {
               </Typography>
               <TextField
                 fullWidth
-                label={t('invitationLoginCode')}
+                placeholder={t('invitationLoginCode')}
                 value={invitationCode}
                 onChange={(e) => setInvitationCode(e.target.value)}
                 variant="outlined"
@@ -179,9 +179,12 @@ const GoogleLogin = () => {
                   fontWeight: 600, 
                   fontSize: '1rem', 
                   mb: 2,
-                  bgcolor: 'primary.main',
+                  bgcolor: '#1976d2',
                   '&:hover': {
-                    bgcolor: 'primary.dark'
+                    bgcolor: '#1565c0'
+                  },
+                  '&:disabled': {
+                    bgcolor: '#e0e0e0'
                   }
                 }}
                 disabled={invitationLoading || !invitationCode.trim()}
