@@ -91,5 +91,5 @@ code {
 
 /* Invitation code input specific styling */
 [data-testid="invitation-code-input"] .MuiInputBase-root {
-  margin: 16px 0 !important;
+  margin: 0 0 16px 0 !important;
 }
