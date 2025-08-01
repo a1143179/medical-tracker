@@ -165,9 +165,7 @@ const GoogleLogin = () => {
                 sx={{ width: '100%' }}
                 disabled={invitationLoading}
                 data-testid="invitation-code-input"
-                FormControlProps={{
-                  id: "invitation-code-input"
-                }}
+                id="invitation-code-input"
               />
               <Button
                 type="submit"
