@@ -162,7 +162,12 @@ const GoogleLogin = () => {
                 onChange={(e) => setInvitationCode(e.target.value)}
                 variant="outlined"
                 size="small"
-                sx={{ width: '100%' }}
+                sx={{ 
+                  width: '100%',
+                  '& .MuiInputBase-root': {
+                    marginLeft: 0
+                  }
+                }}
                 disabled={invitationLoading}
                 data-testid="invitation-code-input"
                 id="invitation-code-input"
