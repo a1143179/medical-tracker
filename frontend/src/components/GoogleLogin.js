@@ -164,8 +164,10 @@ const GoogleLogin = () => {
                 size="small"
                 sx={{ width: '100%' }}
                 disabled={invitationLoading}
-                id="invitation-code-input"
                 data-testid="invitation-code-input"
+                FormControlProps={{
+                  id: "invitation-code-input"
+                }}
               />
               <Button
                 type="submit"
@@ -187,8 +189,8 @@ const GoogleLogin = () => {
                   }
                 }}
                 disabled={invitationLoading || !invitationCode.trim()}
-                id="invitation-login-button"
                 data-testid="invitation-login-button"
+                id="invitation-login-button"
               >
                 {invitationLoading ? <CircularProgress size={20} /> : t('signIn')}
               </Button>
