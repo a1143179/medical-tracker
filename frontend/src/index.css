@@ -90,10 +90,6 @@ code {
 }
 
 /* Invitation code input specific styling */
-#invitation-code-input .MuiOutlinedInput-root {
-  margin-left: 0 !important;
-}
-
-#invitation-code-input {
-  margin-left: 0 !important;
+[data-testid="invitation-code-input"] .MuiInputBase-root {
+  margin-left: 0;
 }
