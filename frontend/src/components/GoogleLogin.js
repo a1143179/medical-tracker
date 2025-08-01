@@ -155,6 +155,9 @@ const GoogleLogin = () => {
 
             {/* Invitation Code Login */}
             <Box component="form" onSubmit={handleInvitationLogin} sx={{ width: { xs: '100%', md: '280px' } }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'left' }}>
+                {t('loginWithInvitation')}
+              </Typography>
               <TextField
                 fullWidth
                 label={t('invitationLoginCode')}
@@ -168,19 +171,23 @@ const GoogleLogin = () => {
               />
               <Button
                 type="submit"
-                variant="outlined"
+                variant="contained"
                 color="primary"
                 fullWidth
                 sx={{ 
                   py: 1.5, 
                   fontWeight: 600, 
                   fontSize: '1rem', 
-                  mb: 2
+                  mb: 2,
+                  bgcolor: 'primary.main',
+                  '&:hover': {
+                    bgcolor: 'primary.dark'
+                  }
                 }}
                 disabled={invitationLoading || !invitationCode.trim()}
                 data-testid="invitation-login-button"
               >
-                {invitationLoading ? <CircularProgress size={20} /> : t('loginWithInvitation')}
+                {invitationLoading ? <CircularProgress size={20} /> : t('signIn')}
               </Button>
             </Box>
 
