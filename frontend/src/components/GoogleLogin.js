@@ -155,9 +155,6 @@ const GoogleLogin = () => {
 
             {/* Invitation Code Login */}
             <Box component="form" onSubmit={handleInvitationLogin} sx={{ width: { xs: '100%', md: '280px' } }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, textAlign: 'left' }}>
-                {t('loginWithInvitation')}
-              </Typography>
               <TextField
                 fullWidth
                 placeholder={t('invitationLoginCode')}
