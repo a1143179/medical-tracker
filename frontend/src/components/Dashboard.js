@@ -51,7 +51,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer
 } from 'recharts';
-import SaveToDesktopPopup from './SaveToDesktopPopup';
+
 
 // Optimized input field component to prevent focus loss on re-renders
 const OptimizedTextField = memo(({ 
@@ -1238,7 +1238,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         position: 'relative',
         overflow: 'hidden'
       }}>
-        <SaveToDesktopPopup />
+
         {isMobile ? (
           // Mobile Layout
           <Container maxWidth="xs" sx={{ py: 0, pt: 2, flexGrow: 1, px: 0 }}>
