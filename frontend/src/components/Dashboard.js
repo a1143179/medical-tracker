@@ -854,7 +854,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   );
 
   // Mobile Add Record Content
-  const MobileAddRecord = () => {
+  const MobileAddRecord = memo(() => {
     // Memoize the label to prevent unnecessary re-renders
     const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
     
@@ -975,11 +975,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  };
+  });
   // eslint-disable-next-line react/display-name
   
   // Mobile Edit Record Content (reuse add form, but with different button text)
-  const MobileEditRecord = () => {
+  const MobileEditRecord = memo(() => {
     // Use local state for input values to prevent focus loss, similar to invitation code input
     const [localValue, setLocalValue] = useState(currentRecord.value ?? '');
     const [localValue2, setLocalValue2] = useState(currentRecord.value2 ?? '');
@@ -1133,7 +1133,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  };
+  });
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden' }}>
