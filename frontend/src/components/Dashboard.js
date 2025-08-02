@@ -587,9 +587,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setCurrentRecord(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  // Memoized input change handler to prevent unnecessary re-renders
-  const memoizedHandleInputChange = useMemo(() => handleInputChange, [handleInputChange]);
-
   // Create stable input handlers for each field to prevent re-renders
   const handleValueChange = useCallback((e) => {
     setCurrentRecord(prev => ({ ...prev, value: e.target.value }));
