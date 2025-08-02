@@ -1,15 +1,15 @@
-name: Auto Create Pull Request
+name: Auto Process Merged PR
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
-      - '**'
-      - '!main'
-      - '!master'
+      - main
 
 jobs:
-  auto-create-pr:
+  process-merged-pr:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -19,45 +19,24 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Check if PR already exists
-        id: check-pr
+      - name: Process merged PR
         run: |
-          # Check if a PR already exists from this branch to main
-          PR_EXISTS=$(gh pr list --head ${{ github.ref_name }} --base main --json number --jq 'length')
-          echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
-          echo "Current branch: ${{ github.ref_name }}"
-          echo "PR exists: $PR_EXISTS"
+          echo "Processing merged PR: ${{ github.event.pull_request.title }}"
+          echo "Source branch: ${{ github.event.pull_request.head.ref }}"
+          echo "Target branch: ${{ github.event.pull_request.base.ref }}"
+          echo "Merged by: ${{ github.event.pull_request.merged_by.login }}"
+          echo "Merge commit SHA: ${{ github.event.pull_request.merge_commit_sha }}"
+          
+          # Add your post-merge processing logic here
+          # For example:
+          # - Clean up temporary branches
+          # - Update documentation
+          # - Trigger deployments
+          # - Send notifications
+          
+          echo "PR merge processing completed"
 
-      - name: Auto Create Pull Request
-        if: steps.check-pr.outputs.pr_exists == '0'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'Auto create PR from ${{ github.ref_name }}'
-          title: 'Auto PR: ${{ github.ref_name }} → main'
-          body: |
-            ## 自动创建的Pull Request
-            
-            此PR是从分支 `${{ github.ref_name }}` 自动创建的。
-            
-            ### 变更内容
-            - 自动从分支 `${{ github.ref_name }}` 创建到 `main` 分支的PR
-            
-            ### 检查清单
-            - [ ] 代码审查
-            - [ ] 测试通过
-            - [ ] 文档更新（如需要）
-            
-            ---
-            *此PR由GitHub Actions自动创建*
-          branch: main
-          delete-branch: false
-          base: main
-          labels: |
-            auto-created
-            ${{ github.ref_name }}
-
-      - name: Skip PR creation
-        if: steps.check-pr.outputs.pr_exists != '0'
+      - name: Cleanup (Optional)
         run: |
-          echo "PR already exists from ${{ github.ref_name }} to main, skipping creation" 
+          echo "Performing post-merge cleanup tasks..."
+          # Add cleanup logic here if needed 
