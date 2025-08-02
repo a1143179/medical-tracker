@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import GoogleIcon from '@mui/icons-material/Google';
-import { Box, Grid, Paper, Typography, Button, useTheme, useMediaQuery, Divider, Stack, CircularProgress, Checkbox, FormControlLabel } from '@mui/material';
+import { Box, Grid, Paper, Typography, Button, useTheme, useMediaQuery, Divider, Stack, CircularProgress, Checkbox, FormControlLabel, TextField } from '@mui/material';
 
 const GoogleLogin = () => {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginWithInvitation } = useAuth();
   const { t } = useLanguage();
   const theme = useTheme();
   const isTestMobile = typeof window !== 'undefined' && window.Cypress && window.localStorage.getItem('forceMobile') === 'true';
   const isMobile = useMediaQuery(theme.breakpoints.down('md')) || isTestMobile;
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [invitationCode, setInvitationCode] = useState('');
+  const [invitationLoading, setInvitationLoading] = useState(false);
 
   const handleLogin = async (e) => {
     setLoading(true);
@@ -23,6 +25,21 @@ const GoogleLogin = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInvitationLogin = async (e) => {
+    e.preventDefault();
+    if (!invitationCode.trim()) return;
+    
+    setInvitationLoading(true);
+    try {
+      await loginWithInvitation(invitationCode, rememberMe);
+    } catch (error) {
+      console.error('Invitation login failed:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setInvitationLoading(false);
     }
   };
 
@@ -129,6 +146,60 @@ const GoogleLogin = () => {
             >
               {t('signInWithGoogle')}
             </Button>
+            
+            {/* Divider */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, width: { xs: '100%', md: '280px' } }}>
+              <Divider sx={{ flex: 1 }} />
+              <Typography variant="body2" color="text.secondary" sx={{ mx: 2 }}>
+                {t('or')}
+              </Typography>
+              <Divider sx={{ flex: 1 }} />
+            </Box>
+
+            {/* Invitation Code Login */}
+            <Box component="form" onSubmit={handleInvitationLogin} sx={{ width: { xs: '100%', md: '280px' } }}>
+              <TextField
+                fullWidth
+                placeholder={t('invitationLoginCode')}
+                value={invitationCode}
+                onChange={(e) => setInvitationCode(e.target.value)}
+                variant="outlined"
+                size="small"
+                sx={{ 
+                  width: '100%',
+                  marginLeft: 0
+                }}
+                disabled={invitationLoading}
+                data-testid="invitation-code-input"
+                id="invitation-code-input"
+              />
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                fullWidth
+                sx={{ 
+                  py: 1.5, 
+                  fontWeight: 600, 
+                  fontSize: '1rem', 
+                  mb: 2,
+                  bgcolor: '#1976d2',
+                  width: '100%',
+                  '&:hover': {
+                    bgcolor: '#1565c0'
+                  },
+                  '&:disabled': {
+                    bgcolor: '#e0e0e0'
+                  }
+                }}
+                disabled={invitationLoading}
+                data-testid="invitation-login-button"
+                id="invitation-login-button"
+              >
+                {invitationLoading ? <CircularProgress size={20} /> : t('signIn')}
+              </Button>
+            </Box>
+
             <FormControlLabel
               control={
                 <Checkbox

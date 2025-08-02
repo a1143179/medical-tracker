@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Backend.Models;
 
 public class User
@@ -10,4 +12,8 @@ public class User
     
     // User's preferred medical value type
     public int PreferredValueTypeId { get; set; } = 1; // Default to Blood Sugar (ID 1)
+    
+    // Invitation code for login
+    [StringLength(10)]
+    public string? InvitationCode { get; set; }
 } 

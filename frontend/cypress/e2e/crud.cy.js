@@ -75,3 +75,33 @@ describe('Medical Tracker CRUD Flow', () => {
     cy.contains('Updated record').should('not.exist');
   });
 });
+
+describe('Save to Desktop Popup (Mobile)', () => {
+  beforeEach(() => {
+    // 设置为移动端 userAgent
+    cy.visit('/', {
+      onBeforeLoad(win) {
+        Object.defineProperty(win.navigator, 'userAgent', {
+          value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15A372 Safari/604.1',
+        });
+      }
+    });
+    cy.clearLocalStorage('hideSaveToDesktopPopup');
+  });
+
+  it('should show popup on mobile and close on OK', () => {
+    cy.reload();
+    cy.get('[data-testid="save-popup-ok"]').should('be.visible').click();
+    cy.get('[data-testid="save-popup-ok"]').should('not.exist');
+  });
+
+  it('should not show popup after clicking Do not notify me again', () => {
+    cy.reload();
+    cy.get('[data-testid="save-popup-no-notify"]').should('be.visible').click();
+    cy.get('[data-testid="save-popup-no-notify"]').should('not.exist');
+    // 再次刷新页面，弹窗不应再出现
+    cy.reload();
+    cy.get('[data-testid="save-popup-ok"]').should('not.exist');
+    cy.get('[data-testid="save-popup-no-notify"]').should('not.exist');
+  });
+});

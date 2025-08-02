@@ -44,6 +44,34 @@ export function AuthProvider({ children }) {
     window.location.href = loginUrl;
   };
 
+  const loginWithInvitation = async (invitationCode, rememberMe = false) => {
+    try {
+      const response = await fetch('/api/auth/login-with-invitation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          invitationCode: invitationCode,
+          rememberMe: rememberMe
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        window.location.href = '/dashboard';
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Invitation login error:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     setUser(null);
@@ -77,7 +105,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout, updatePreferredValueType }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithInvitation, logout, updatePreferredValueType }}>
       {children}
     </AuthContext.Provider>
   );

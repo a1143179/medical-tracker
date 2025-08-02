@@ -47,11 +47,20 @@ code {
   box-sizing: border-box;
 }
 
-/* Fix Material-UI TextField label overlap issue */
-.MuiOutlinedInput-root {
-  /* Convert padding to margin to prevent label overlap */
-  padding: 0 !important;
-  margin: 16.5px 14px !important;
+/* Material-UI TextField fixes with higher specificity */
+.MuiFormControl-root .MuiOutlinedInput-root {
+  padding: 0;
+  margin: 16.5px 14px;
+}
+
+.MuiFormControl-root .MuiFilledInput-root {
+  padding: 0;
+  margin: 16.5px 14px;
+}
+
+.MuiFormControl-root .MuiInput-root {
+  padding: 0;
+  margin: 16.5px 14px;
 }
 
 /* Ensure proper spacing for TextField components */
@@ -59,38 +68,28 @@ code {
   margin: 8px 0;
 }
 
-/* Fix for filled TextField variants */
-.MuiFilledInput-root {
-  padding: 0 !important;
-  margin: 16.5px 14px !important;
+/* Additional specificity for generated Material-UI classes */
+.MuiFormControl-root [class*="css-"].MuiOutlinedInput-root,
+.MuiFormControl-root [class*="css-"].MuiFilledInput-root,
+.MuiFormControl-root [class*="css-"].MuiInput-root {
+  padding: 0;
+  margin: 16.5px 14px;
 }
 
-/* Fix for standard TextField variants */
-.MuiInput-root {
-  padding: 0 !important;
-  margin: 16.5px 14px !important;
-}
-
-/* Additional fix for generated Material-UI classes and input padding issues */
-[class*="css-"] {
-  /* Target any generated CSS classes that might have padding issues */
-  &.MuiOutlinedInput-root,
-  &.MuiFilledInput-root,
-  &.MuiInput-root {
-    padding: 0 !important;
-    margin: 16.5px 14px !important;
-  }
-}
-
-/* Ensure proper label positioning */
-.MuiInputLabel-root {
-  background: transparent !important;
+/* Ensure proper label positioning with higher specificity */
+.MuiFormControl-root .MuiInputLabel-root {
+  background: transparent;
   z-index: 1;
 }
 
-/* Fix for input field background overlap */
-.MuiOutlinedInput-root .MuiOutlinedInput-input,
-.MuiFilledInput-root .MuiFilledInput-input,
-.MuiInput-root .MuiInput-input {
-  background: transparent !important;
+/* Fix for input field background overlap with higher specificity */
+.MuiFormControl-root .MuiOutlinedInput-root .MuiOutlinedInput-input,
+.MuiFormControl-root .MuiFilledInput-root .MuiFilledInput-input,
+.MuiFormControl-root .MuiInput-root .MuiInput-input {
+  background: transparent;
+}
+
+/* Invitation code input specific styling */
+[data-testid="invitation-code-input"] .MuiInputBase-root {
+  margin: 0 0 16px 0 !important;
 }
