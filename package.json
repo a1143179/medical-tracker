@@ -15,11 +15,11 @@
   },
   "lint-staged": {
     "frontend/src/**/*.{js,jsx}": [
-      "eslint --fix",
+      "cd frontend && eslint --fix",
       "git add"
     ],
     "frontend/cypress/**/*.{js,jsx}": [
-      "eslint --fix",
+      "cd frontend && eslint --fix",
       "git add"
     ]
   }

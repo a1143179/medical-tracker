@@ -1,1 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run ESLint on frontend files
+echo "Running ESLint on frontend files..."
+cd frontend && npm run lint
+
+# Run lint-staged for additional checks
 npx lint-staged

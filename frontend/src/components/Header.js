@@ -231,7 +231,7 @@ const Header = ({ onMobileNavigate }) => {
           </List>
           <Divider />
           <List>
-            <ListItem button onClick={handleLogout}>
+            <ListItem component="button" onClick={handleLogout}>
               <ListItemIcon>
                 <Logout />
               </ListItemIcon>
