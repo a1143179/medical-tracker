@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
@@ -857,19 +857,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   const MobileAddRecord = () => {
     // Memoize the label to prevent unnecessary re-renders
     const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
-    // Use useRef to maintain focus and prevent unnecessary re-renders
-    const valueInputRef = useRef(null);
-    const value2InputRef = useRef(null);
     
     // Always provide a string value for the input to prevent focus loss
     const valueValue = currentRecord.value ?? '';
     const value2Value = currentRecord.value2 ?? '';
-    
-    // Custom onChange handler to maintain focus
-    const handleValueChange = useCallback((e) => {
-      const { name, value } = e.target;
-      setCurrentRecord(prev => ({ ...prev, [name]: value }));
-    }, []);
     
     return (
       <Box sx={{ p: 0 }}>
@@ -886,7 +877,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 type="datetime-local"
                 name="measurementTime"
                 value={currentRecord.measurementTime}
-                onChange={handleValueChange}
+                onChange={handleInputChange}
                 required
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
@@ -902,10 +893,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 type="text"
                 name="value"
                 value={valueValue}
-                onChange={handleValueChange}
+                onChange={handleInputChange}
                 required
                 margin="normal"
-                inputRef={valueInputRef}
                 inputProps={{
                   inputMode: 'decimal',
                   autoComplete: 'off',
@@ -921,10 +911,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   type="text"
                   name="value2"
                   value={value2Value}
-                  onChange={handleValueChange}
+                  onChange={handleInputChange}
                   required
                   margin="normal"
-                  inputRef={value2InputRef}
                   inputProps={{
                     inputMode: 'decimal',
                     autoComplete: 'off',
@@ -939,7 +928,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={t('notesLabel')}
                 name="notes"
                 value={currentRecord.notes}
-                onChange={handleValueChange}
+                onChange={handleInputChange}
                 margin="normal"
                 multiline
                 rows={3}
@@ -972,19 +961,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   
   // Mobile Edit Record Content (reuse add form, but with different button text)
   const MobileEditRecord = () => {
-    // Use useRef to maintain focus and prevent unnecessary re-renders
-    const valueInputRef = useRef(null);
-    const value2InputRef = useRef(null);
-    
     // Always provide a string value for the input to prevent focus loss
     const valueValue = currentRecord.value ?? '';
     const value2Value = currentRecord.value2 ?? '';
-    
-    // Custom onChange handler to maintain focus
-    const handleValueChange = useCallback((e) => {
-      const { name, value } = e.target;
-      setCurrentRecord(prev => ({ ...prev, [name]: value }));
-    }, []);
     
     return (
       <Box sx={{ p: 0 }}>
@@ -1002,7 +981,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   value={currentRecord.valueTypeId}
                   label={t('medicalValueTypeLabel')}
                   name="valueTypeId"
-                  onChange={handleValueChange}
+                  onChange={handleInputChange}
                   inputProps={{ 'data-testid': 'value-type-native-input' }}
                   MenuProps={{
                     PaperProps: {
@@ -1037,7 +1016,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 type="datetime-local"
                 name="measurementTime"
                 value={currentRecord.measurementTime}
-                onChange={handleValueChange}
+                onChange={handleInputChange}
                 required
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
@@ -1053,10 +1032,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 type="text"
                 name="value"
                 value={valueValue}
-                onChange={handleValueChange}
+                onChange={handleInputChange}
                 required
                 margin="normal"
-                inputRef={valueInputRef}
                 inputProps={{
                   inputMode: 'decimal',
                   autoComplete: 'off',
@@ -1072,10 +1050,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   type="text"
                   name="value2"
                   value={value2Value}
-                  onChange={handleValueChange}
+                  onChange={handleInputChange}
                   required
                   margin="normal"
-                  inputRef={value2InputRef}
                   inputProps={{
                     inputMode: 'decimal',
                     autoComplete: 'off',
@@ -1090,7 +1067,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={t('notesLabel')}
                 name="notes"
                 value={currentRecord.notes}
-                onChange={handleValueChange}
+                onChange={handleInputChange}
                 margin="normal"
                 multiline
                 rows={3}
