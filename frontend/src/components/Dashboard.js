@@ -267,7 +267,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
-    // Always store as string to preserve decimals as typed and prevent focus loss
     setCurrentRecord(prev => ({ ...prev, [name]: value }));
   }, []);
 
@@ -373,9 +372,12 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       value: record.value !== undefined && record.value !== null ? String(record.value) : '',
       value2: record.value2 !== undefined && record.value2 !== null ? String(record.value2) : ''
     });
-    setOpenDialog(true);
+    
+    // Only open dialog on desktop, use page change on mobile
     if (isMobile) {
       onMobilePageChange('edit');
+    } else {
+      setOpenDialog(true);
     }
   };
 
@@ -414,7 +416,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       notes: '',
       valueTypeId: selectedValueType // Use current selected value type
     });
-    setOpenDialog(false);
+    
+    // Only close dialog on desktop
+    if (!isMobile) {
+      setOpenDialog(false);
+    }
   };
 
   const handleChangePage = useCallback((event, newPage) => {
@@ -854,7 +860,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   );
 
   // Mobile Add Record Content
-  const MobileAddRecord = memo(() => {
+  const MobileAddRecord = () => {
     // Memoize the label to prevent unnecessary re-renders
     const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
     
@@ -952,11 +958,10 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  });
-  // eslint-disable-next-line react/display-name
+  };
   
   // Mobile Edit Record Content (reuse add form, but with different button text)
-  const MobileEditRecord = memo(() => {
+  const MobileEditRecord = () => {
     
     return (
       <Box sx={{ p: 0 }}>
@@ -1070,7 +1075,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 <Button 
                   variant="outlined" 
                   fullWidth
-                  onClick={() => onMobilePageChange('dashboard')}
+                  onClick={() => handleMobilePageChange('dashboard')}
                 >
                   {t('cancel')}
                 </Button>
@@ -1078,9 +1083,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   type="submit" 
                   variant="contained" 
                   fullWidth
-                  data-testid="edit-record-button"
+                  data-testid="save-record-button"
                 >
-                  {t('saveChanges')}
+                  {t('update')}
                 </Button>
               </Box>
             </Box>
@@ -1088,7 +1093,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  });
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -1620,54 +1625,37 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         )}
       </Box>
 
-      {/* Add Record Dialog */}
-      <Dialog open={openDialog} onClose={resetForm} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {isEditing ? t('editBloodSugarRecord') : t('addNewBloodSugarRecord')}
-        </DialogTitle>
-        <DialogContent>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
-              label={t('dateTimeLabel')}
-              type="datetime-local"
-              name="measurementTime"
-              value={currentRecord.measurementTime}
-              onChange={handleInputChange}
-              required
-              margin="normal"
-              InputLabelProps={{ shrink: true }}
-              inputProps={{
-                step: 60, // 1 minute steps
-                autoComplete: 'off',
-                inputMode: 'numeric',
-                pattern: '[0-9T:-]*',
-              }}
-            />
-            <TextField
-              fullWidth
-              label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
-              type="text"
-              name="value"
-              value={currentRecord.value ?? ''}
-              onChange={handleInputChange}
-              required
-              margin="normal"
-              inputProps={{
-                inputMode: 'decimal',
-                autoComplete: 'off',
-                autoCorrect: 'off',
-                autoCapitalize: 'off',
-                spellCheck: 'false'
-              }}
-            />
-            {requiresTwoValues() && (
+      {/* Add Record Dialog - Only show on desktop */}
+      {!isMobile && (
+        <Dialog open={openDialog} onClose={resetForm} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            {isEditing ? t('editBloodSugarRecord') : t('addNewBloodSugarRecord')}
+          </DialogTitle>
+          <DialogContent>
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
               <TextField
                 fullWidth
-                label={t('diastolicPressure')}
+                label={t('dateTimeLabel')}
+                type="datetime-local"
+                name="measurementTime"
+                value={currentRecord.measurementTime}
+                onChange={handleInputChange}
+                required
+                margin="normal"
+                InputLabelProps={{ shrink: true }}
+                inputProps={{
+                  step: 60, // 1 minute steps
+                  autoComplete: 'off',
+                  inputMode: 'numeric',
+                  pattern: '[0-9T:-]*',
+                }}
+              />
+              <TextField
+                fullWidth
+                label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                 type="text"
-                name="value2"
-                value={currentRecord.value2 ?? ''}
+                name="value"
+                value={currentRecord.value ?? ''}
                 onChange={handleInputChange}
                 required
                 margin="normal"
@@ -1679,27 +1667,46 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   spellCheck: 'false'
                 }}
               />
-            )}
-            <TextField
-              fullWidth
-              label={t('notesLabel')}
-              name="notes"
-              value={currentRecord.notes}
-              onChange={handleInputChange}
-              margin="normal"
-              multiline
-              rows={3}
-              helperText={t('optionalNotes')}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={resetForm}>{t('cancel')}</Button>
-          <Button onClick={handleSubmit} variant="contained" data-testid={isEditing ? "save-record-button" : "add-new-record-button"}>
-            {isEditing ? t('update') : t('addRecordButton')}
-          </Button>
-        </DialogActions>
-      </Dialog>
+              {requiresTwoValues() && (
+                <TextField
+                  fullWidth
+                  label={t('diastolicPressure')}
+                  type="text"
+                  name="value2"
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
+                  required
+                  margin="normal"
+                  inputProps={{
+                    inputMode: 'decimal',
+                    autoComplete: 'off',
+                    autoCorrect: 'off',
+                    autoCapitalize: 'off',
+                    spellCheck: 'false'
+                  }}
+                />
+              )}
+              <TextField
+                fullWidth
+                label={t('notesLabel')}
+                name="notes"
+                value={currentRecord.notes}
+                onChange={handleInputChange}
+                margin="normal"
+                multiline
+                rows={3}
+                helperText={t('optionalNotes')}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={resetForm}>{t('cancel')}</Button>
+            <Button onClick={handleSubmit} variant="contained" data-testid={isEditing ? "save-record-button" : "add-new-record-button"}>
+              {isEditing ? t('update') : t('addRecordButton')}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
 
     </Box>
   );
