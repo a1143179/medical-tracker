@@ -858,29 +858,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     // Memoize the label to prevent unnecessary re-renders
     const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
     
-    // Use local state for input values to prevent focus loss, similar to invitation code input
-    const [localValue, setLocalValue] = useState(currentRecord.value ?? '');
-    const [localValue2, setLocalValue2] = useState(currentRecord.value2 ?? '');
-    
-    // Update local state when currentRecord changes
-    useEffect(() => {
-      setLocalValue(currentRecord.value ?? '');
-      setLocalValue2(currentRecord.value2 ?? '');
-    }, [currentRecord.value, currentRecord.value2]);
-    
-    // Local change handlers to prevent focus loss
-    const handleLocalValueChange = useCallback((e) => {
-      const value = e.target.value;
-      setLocalValue(value);
-      setCurrentRecord(prev => ({ ...prev, value }));
-    }, []);
-    
-    const handleLocalValue2Change = useCallback((e) => {
-      const value = e.target.value;
-      setLocalValue2(value);
-      setCurrentRecord(prev => ({ ...prev, value2: value }));
-    }, []);
-    
     return (
       <Box sx={{ p: 0 }}>
         <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
@@ -911,8 +888,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={requiresTwoValues() ? t('systolicPressure') : medicalRecordLabel}
                 type="text"
                 name="value"
-                value={localValue}
-                onChange={handleLocalValueChange}
+                value={currentRecord.value ?? ''}
+                onChange={handleInputChange}
                 required
                 margin="normal"
                 inputProps={{
@@ -929,8 +906,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   label={t('diastolicPressure')}
                   type="text"
                   name="value2"
-                  value={localValue2}
-                  onChange={handleLocalValue2Change}
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
                   required
                   margin="normal"
                   inputProps={{
@@ -980,28 +957,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   
   // Mobile Edit Record Content (reuse add form, but with different button text)
   const MobileEditRecord = memo(() => {
-    // Use local state for input values to prevent focus loss, similar to invitation code input
-    const [localValue, setLocalValue] = useState(currentRecord.value ?? '');
-    const [localValue2, setLocalValue2] = useState(currentRecord.value2 ?? '');
-    
-    // Update local state when currentRecord changes
-    useEffect(() => {
-      setLocalValue(currentRecord.value ?? '');
-      setLocalValue2(currentRecord.value2 ?? '');
-    }, [currentRecord.value, currentRecord.value2]);
-    
-    // Local change handlers to prevent focus loss
-    const handleLocalValueChange = useCallback((e) => {
-      const value = e.target.value;
-      setLocalValue(value);
-      setCurrentRecord(prev => ({ ...prev, value }));
-    }, []);
-    
-    const handleLocalValue2Change = useCallback((e) => {
-      const value = e.target.value;
-      setLocalValue2(value);
-      setCurrentRecord(prev => ({ ...prev, value2: value }));
-    }, []);
     
     return (
       <Box sx={{ p: 0 }}>
@@ -1069,8 +1024,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                 type="text"
                 name="value"
-                value={localValue}
-                onChange={handleLocalValueChange}
+                value={currentRecord.value ?? ''}
+                onChange={handleInputChange}
                 required
                 margin="normal"
                 inputProps={{
@@ -1087,8 +1042,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   label={t('diastolicPressure')}
                   type="text"
                   name="value2"
-                  value={localValue2}
-                  onChange={handleLocalValue2Change}
+                  value={currentRecord.value2 ?? ''}
+                  onChange={handleInputChange}
                   required
                   margin="normal"
                   inputProps={{
