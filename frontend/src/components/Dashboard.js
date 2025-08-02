@@ -105,14 +105,14 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   }, [selectedValueTypeData]);
 
   // Function to handle value type change
-  const handleValueTypeChange = async (newValueType) => {
+  const handleValueTypeChange = useCallback(async (newValueType) => {
     setSelectedValueType(newValueType);
     
     // Save to database if user is authenticated
     if (user?.id) {
       await updatePreferredValueType(newValueType);
     }
-  };
+  }, [user?.id, updatePreferredValueType]);
   
   // Function to check if current value type requires two values
   const requiresTwoValues = useCallback(() => {
@@ -265,11 +265,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     }
   }, [user?.preferredValueTypeId, selectedValueType, valueTypes.length]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     // Always store as string to preserve decimals as typed and prevent focus loss
-    setCurrentRecord({ ...currentRecord, [name]: value });
-  };
+    setCurrentRecord(prev => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -417,22 +417,22 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setOpenDialog(false);
   };
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = useCallback((event, newPage) => {
     setPage(newPage);
-  };
+  }, []);
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = useCallback((event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
+  }, []);
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = useCallback((event, newValue) => {
     setActiveTab(newValue);
-  };
+  }, []);
 
-  const handleMobilePageChange = (page) => {
+  const handleMobilePageChange = useCallback((page) => {
     onMobilePageChange(page);
-  };
+  }, [onMobilePageChange]);
 
 
 
