@@ -170,6 +170,8 @@ export const LanguageProvider = ({ children }) => {
       medicalValueTypeLabel: 'Medical Value Type',
       diastolicPressure: 'Diastolic Pressure',
       systolicPressure: 'Systolic Pressure',
+      contextImageValue: 'Context Image Value',
+      contextImageValueHelp: 'Optional value related to context image',
       
       // Status Labels
       low: 'Low',
@@ -298,6 +300,8 @@ export const LanguageProvider = ({ children }) => {
       enterBloodSugarReading: '输入您的医疗数值',
       medicalRecordLabel: '医疗记录',
       notesLabel: '备注',
+      contextImageValue: '上下文图片值',
+      contextImageValueHelp: '与上下文图片相关的可选值',
       optionalNotes: '关于此读数的可选备注',
       cancel: '取消',
       update: '更新',

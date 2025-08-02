@@ -53,6 +53,43 @@ import {
 } from 'recharts';
 import SaveToDesktopPopup from './SaveToDesktopPopup';
 
+// Optimized input field component to prevent focus loss on re-renders
+const OptimizedTextField = memo(({ 
+  label, 
+  name, 
+  value, 
+  onChange, 
+  required = false, 
+  multiline = false, 
+  rows = 1,
+  helperText = '',
+  inputProps = {},
+  ...props 
+}) => {
+  const handleChange = useCallback((e) => {
+    onChange(e);
+  }, [onChange]);
+
+  return (
+    <TextField
+      fullWidth
+      label={label}
+      name={name}
+      value={value}
+      onChange={handleChange}
+      required={required}
+      margin="normal"
+      multiline={multiline}
+      rows={rows}
+      helperText={helperText}
+      inputProps={inputProps}
+      {...props}
+    />
+  );
+});
+
+OptimizedTextField.displayName = 'OptimizedTextField';
+
 // Backend API URL
 const API_URL = '/api/records';
 
@@ -79,6 +116,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     })(), 
     value: '', 
     value2: '', // Second value for blood pressure
+    value3: '', // Third value for context image
     notes: '',
     valueTypeId: ''
   });
@@ -270,6 +308,9 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     setCurrentRecord(prev => ({ ...prev, [name]: value }));
   }, []);
 
+  // Memoized input change handler to prevent unnecessary re-renders
+  const memoizedHandleInputChange = useMemo(() => handleInputChange, [handleInputChange]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -296,6 +337,16 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         }
       }
 
+      // Validate third value (context image value)
+      let value3 = null;
+      if (currentRecord.value3) {
+        value3 = parseFloat(currentRecord.value3);
+        if (isNaN(value3) || value3 < 0.1 || value3 > 1000) {
+          showMessage('Context image value must be between 0.1 and 1000', 'error');
+          return;
+        }
+      }
+
       if (currentRecord.notes && currentRecord.notes.length > 1000) {
         showMessage('Notes cannot exceed 1000 characters', 'error');
         return;
@@ -310,6 +361,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             ...currentRecord, 
             value: value,
             value2: value2,
+            value3: value3,
             valueTypeId: selectedValueType, // Use current selected value type
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
@@ -332,6 +384,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
             ...currentRecord, 
             value: value,
             value2: value2,
+            value3: value3,
             valueTypeId: selectedValueType, // Use current selected value type
             measurementTime: new Date(currentRecord.measurementTime).toISOString()
           }),
@@ -370,7 +423,8 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       ...record, 
       measurementTime: localDateTime,
       value: record.value !== undefined && record.value !== null ? String(record.value) : '',
-      value2: record.value2 !== undefined && record.value2 !== null ? String(record.value2) : ''
+      value2: record.value2 !== undefined && record.value2 !== null ? String(record.value2) : '',
+      value3: record.value3 !== undefined && record.value3 !== null ? String(record.value3) : ''
     });
     
     // Only open dialog on desktop, use page change on mobile
@@ -413,6 +467,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
       measurementTime: localDateTime, 
       value: '', 
       value2: '', // Reset second value
+      value3: '', // Reset third value
       notes: '',
       valueTypeId: selectedValueType // Use current selected value type
     });
@@ -873,15 +928,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           <Paper elevation={3} sx={{ p: 2 }}>
             <Box component="form" onSubmit={handleSubmit}>
               
-              <TextField
-                fullWidth
+              <OptimizedTextField
                 label={t('dateTimeLabel')}
                 type="datetime-local"
                 name="measurementTime"
                 value={currentRecord.measurementTime}
-                onChange={handleInputChange}
+                onChange={memoizedHandleInputChange}
                 required
-                margin="normal"
                 InputLabelProps={{ shrink: true }}
                 inputProps={{
                   step: 60, // 1 minute steps
@@ -889,15 +942,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   inputMode: 'numeric',
                 }}
               />
-              <TextField
-                fullWidth
+              <OptimizedTextField
                 label={requiresTwoValues() ? t('systolicPressure') : medicalRecordLabel}
                 type="text"
                 name="value"
                 value={currentRecord.value ?? ''}
-                onChange={handleInputChange}
+                onChange={memoizedHandleInputChange}
                 required
-                margin="normal"
                 inputProps={{
                   inputMode: 'decimal',
                   autoComplete: 'off',
@@ -907,15 +958,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 }}
               />
               {requiresTwoValues() && (
-                <TextField
-                  fullWidth
+                <OptimizedTextField
                   label={t('diastolicPressure')}
                   type="text"
                   name="value2"
                   value={currentRecord.value2 ?? ''}
-                  onChange={handleInputChange}
+                  onChange={memoizedHandleInputChange}
                   required
-                  margin="normal"
                   inputProps={{
                     inputMode: 'decimal',
                     autoComplete: 'off',
@@ -925,13 +974,26 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   }}
                 />
               )}
-              <TextField
-                fullWidth
+              <OptimizedTextField
+                label={t('contextImageValue')}
+                type="text"
+                name="value3"
+                value={currentRecord.value3 ?? ''}
+                onChange={memoizedHandleInputChange}
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false',
+                }}
+                helperText={t('contextImageValueHelp')}
+              />
+              <OptimizedTextField
                 label={t('notesLabel')}
                 name="notes"
                 value={currentRecord.notes}
-                onChange={handleInputChange}
-                margin="normal"
+                onChange={memoizedHandleInputChange}
                 multiline
                 rows={3}
                 helperText={t('optionalNotes')}
@@ -1008,15 +1070,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 </Select>
               </FormControl>
               
-              <TextField
-                fullWidth
+              <OptimizedTextField
                 label={t('dateTimeLabel')}
                 type="datetime-local"
                 name="measurementTime"
                 value={currentRecord.measurementTime}
-                onChange={handleInputChange}
+                onChange={memoizedHandleInputChange}
                 required
-                margin="normal"
                 InputLabelProps={{ shrink: true }}
                 inputProps={{
                   step: 60,
@@ -1024,15 +1084,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   inputMode: 'numeric',
                 }}
               />
-              <TextField
-                fullWidth
+              <OptimizedTextField
                 label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
                 type="text"
                 name="value"
                 value={currentRecord.value ?? ''}
-                onChange={handleInputChange}
+                onChange={memoizedHandleInputChange}
                 required
-                margin="normal"
                 inputProps={{
                   inputMode: 'decimal',
                   autoComplete: 'off',
@@ -1042,15 +1100,13 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                 }}
               />
               {requiresTwoValues() && (
-                <TextField
-                  fullWidth
+                <OptimizedTextField
                   label={t('diastolicPressure')}
                   type="text"
                   name="value2"
                   value={currentRecord.value2 ?? ''}
-                  onChange={handleInputChange}
+                  onChange={memoizedHandleInputChange}
                   required
-                  margin="normal"
                   inputProps={{
                     inputMode: 'decimal',
                     autoComplete: 'off',
@@ -1060,13 +1116,26 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
                   }}
                 />
               )}
-              <TextField
-                fullWidth
+              <OptimizedTextField
+                label={t('contextImageValue')}
+                type="text"
+                name="value3"
+                value={currentRecord.value3 ?? ''}
+                onChange={memoizedHandleInputChange}
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false',
+                }}
+                helperText={t('contextImageValueHelp')}
+              />
+              <OptimizedTextField
                 label={t('notesLabel')}
                 name="notes"
                 value={currentRecord.notes}
-                onChange={handleInputChange}
-                margin="normal"
+                onChange={memoizedHandleInputChange}
                 multiline
                 rows={3}
                 helperText={t('optionalNotes')}
