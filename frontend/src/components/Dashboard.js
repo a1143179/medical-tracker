@@ -854,7 +854,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
   );
 
   // Mobile Add Record Content
-  const MobileAddRecord = memo(() => {
+  const MobileAddRecord = () => {
     // Memoize the label to prevent unnecessary re-renders
     const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
     // Use useRef to maintain focus and prevent unnecessary re-renders
@@ -967,11 +967,11 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  });
+  };
   // eslint-disable-next-line react/display-name
   
   // Mobile Edit Record Content (reuse add form, but with different button text)
-  const MobileEditRecord = memo(() => {
+  const MobileEditRecord = () => {
     // Use useRef to maintain focus and prevent unnecessary re-renders
     const valueInputRef = useRef(null);
     const value2InputRef = useRef(null);
@@ -1118,7 +1118,7 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
         </Box>
       </Box>
     );
-  });
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden' }}>
