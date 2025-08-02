@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import GoogleIcon from '@mui/icons-material/Google';
@@ -42,6 +42,14 @@ const GoogleLogin = () => {
       setInvitationLoading(false);
     }
   };
+
+  const handleInvitationCodeChange = useCallback((e) => {
+    setInvitationCode(e.target.value);
+  }, []);
+
+  const handleRememberMeChange = useCallback((e) => {
+    setRememberMe(e.target.checked);
+  }, []);
 
   return (
     <Box
@@ -162,7 +170,7 @@ const GoogleLogin = () => {
                 fullWidth
                 placeholder={t('invitationLoginCode')}
                 value={invitationCode}
-                onChange={(e) => setInvitationCode(e.target.value)}
+                onChange={handleInvitationCodeChange}
                 variant="outlined"
                 size="small"
                 sx={{ 
@@ -204,7 +212,7 @@ const GoogleLogin = () => {
               control={
                 <Checkbox
                   checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
+                  onChange={handleRememberMeChange}
                   color="primary"
                   inputProps={{ 'data-testid': 'remember-me-checkbox' }}
                 />
