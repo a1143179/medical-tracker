@@ -90,6 +90,285 @@ const OptimizedTextField = memo(({
 
 OptimizedTextField.displayName = 'OptimizedTextField';
 
+// Mobile Add Record Component - moved outside Dashboard to prevent re-creation
+const MobileAddRecord = memo(({ 
+  currentRecord, 
+  handleSubmit, 
+  handleValueChange, 
+  handleValue2Change, 
+  handleValue3Change, 
+  handleNotesChange, 
+  handleMeasurementTimeChange, 
+  handleMobilePageChange, 
+  requiresTwoValues, 
+  t 
+}) => {
+  // Memoize the label to prevent unnecessary re-renders
+  const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), [t]);
+  
+  return (
+    <Box sx={{ p: 0 }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
+        {t('addNewRecord')}
+      </Typography>
+      <Box sx={{ px: 1 }}>
+        <Paper elevation={3} sx={{ p: 2 }}>
+          <Box component="form" onSubmit={handleSubmit}>
+            
+            <OptimizedTextField
+              label={t('dateTimeLabel')}
+              type="datetime-local"
+              name="measurementTime"
+              value={currentRecord.measurementTime}
+              onChange={handleMeasurementTimeChange}
+              required
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                step: 60, // 1 minute steps
+                autoComplete: 'off',
+                inputMode: 'numeric',
+              }}
+            />
+            <OptimizedTextField
+              label={requiresTwoValues() ? t('systolicPressure') : medicalRecordLabel}
+              type="text"
+              name="value"
+              value={currentRecord.value ?? ''}
+              onChange={handleValueChange}
+              required
+              inputProps={{
+                inputMode: 'decimal',
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false',
+              }}
+            />
+            {requiresTwoValues() && (
+              <OptimizedTextField
+                label={t('diastolicPressure')}
+                type="text"
+                name="value2"
+                value={currentRecord.value2 ?? ''}
+                onChange={handleValue2Change}
+                required
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false',
+                }}
+              />
+            )}
+            <OptimizedTextField
+              label={t('contextImageValue')}
+              type="text"
+              name="value3"
+              value={currentRecord.value3 ?? ''}
+              onChange={handleValue3Change}
+              inputProps={{
+                inputMode: 'decimal',
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false',
+              }}
+              helperText={t('contextImageValueHelp')}
+            />
+            <OptimizedTextField
+              label={t('notesLabel')}
+              name="notes"
+              value={currentRecord.notes}
+              onChange={handleNotesChange}
+              multiline
+              rows={3}
+              helperText={t('optionalNotes')}
+            />
+            <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
+              <Button 
+                variant="outlined" 
+                fullWidth
+                onClick={() => handleMobilePageChange('dashboard')}
+              >
+                {t('cancel')}
+              </Button>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                fullWidth
+                data-testid="add-new-record-button"
+              >
+                {t('addRecordButton')}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
+  );
+});
+
+MobileAddRecord.displayName = 'MobileAddRecord';
+
+// Mobile Edit Record Component - moved outside Dashboard to prevent re-creation
+const MobileEditRecord = memo(({ 
+  currentRecord, 
+  handleSubmit, 
+  handleValueChange, 
+  handleValue2Change, 
+  handleValue3Change, 
+  handleNotesChange, 
+  handleMeasurementTimeChange, 
+  handleMobilePageChange, 
+  handleInputChange,
+  requiresTwoValues, 
+  valueTypes,
+  getLocalizedValueTypeName,
+  t 
+}) => {
+  
+  return (
+    <Box sx={{ p: 0 }}>
+      <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
+        {t('editRecord')}
+      </Typography>
+      <Box sx={{ px: 1 }}>
+        <Paper elevation={3} sx={{ p: 2 }}>
+          <Box component="form" onSubmit={handleSubmit}>
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="mobile-edit-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
+              <Select
+                data-testid="value-type-dropdown"
+                labelId="mobile-edit-value-type-label"
+                value={currentRecord.valueTypeId}
+                label={t('medicalValueTypeLabel')}
+                name="valueTypeId"
+                onChange={handleInputChange}
+                inputProps={{ 'data-testid': 'value-type-native-input' }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { 
+                      maxHeight: 200
+                    }
+                  },
+                  anchorOrigin: {
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                  },
+                  transformOrigin: {
+                    vertical: 'top',
+                    horizontal: 'left',
+                  },
+                  disableScrollLock: true,
+                  keepMounted: false,
+                  getContentAnchorEl: null
+                }}
+              >
+                {valueTypes.map((valueType) => (
+                  <MenuItem key={valueType.id} value={valueType.id} data-testid={`value-type-option-${valueType.id}`}>
+                    {getLocalizedValueTypeName(valueType)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <OptimizedTextField
+              label={t('dateTimeLabel')}
+              type="datetime-local"
+              name="measurementTime"
+              value={currentRecord.measurementTime}
+              onChange={handleMeasurementTimeChange}
+              required
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                step: 60,
+                autoComplete: 'off',
+                inputMode: 'numeric',
+              }}
+            />
+            <OptimizedTextField
+              label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
+              type="text"
+              name="value"
+              value={currentRecord.value ?? ''}
+              onChange={handleValueChange}
+              required
+              inputProps={{
+                inputMode: 'decimal',
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false',
+              }}
+            />
+            {requiresTwoValues() && (
+              <OptimizedTextField
+                label={t('diastolicPressure')}
+                type="text"
+                name="value2"
+                value={currentRecord.value2 ?? ''}
+                onChange={handleValue2Change}
+                required
+                inputProps={{
+                  inputMode: 'decimal',
+                  autoComplete: 'off',
+                  autoCorrect: 'off',
+                  autoCapitalize: 'off',
+                  spellCheck: 'false',
+                }}
+              />
+            )}
+            <OptimizedTextField
+              label={t('contextImageValue')}
+              type="text"
+              name="value3"
+              value={currentRecord.value3 ?? ''}
+              onChange={handleValue3Change}
+              inputProps={{
+                inputMode: 'decimal',
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false',
+              }}
+              helperText={t('contextImageValueHelp')}
+            />
+            <OptimizedTextField
+              label={t('notesLabel')}
+              name="notes"
+              value={currentRecord.notes}
+              onChange={handleNotesChange}
+              multiline
+              rows={3}
+              helperText={t('optionalNotes')}
+            />
+            <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
+              <Button 
+                variant="outlined" 
+                fullWidth
+                onClick={() => handleMobilePageChange('dashboard')}
+              >
+                {t('cancel')}
+              </Button>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                fullWidth
+                data-testid="save-record-button"
+              >
+                {t('update')}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    </Box>
+  );
+});
+
+MobileEditRecord.displayName = 'MobileEditRecord';
+
 // Backend API URL
 const API_URL = '/api/records';
 
@@ -310,6 +589,27 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
 
   // Memoized input change handler to prevent unnecessary re-renders
   const memoizedHandleInputChange = useMemo(() => handleInputChange, [handleInputChange]);
+
+  // Create stable input handlers for each field to prevent re-renders
+  const handleValueChange = useCallback((e) => {
+    setCurrentRecord(prev => ({ ...prev, value: e.target.value }));
+  }, []);
+
+  const handleValue2Change = useCallback((e) => {
+    setCurrentRecord(prev => ({ ...prev, value2: e.target.value }));
+  }, []);
+
+  const handleValue3Change = useCallback((e) => {
+    setCurrentRecord(prev => ({ ...prev, value3: e.target.value }));
+  }, []);
+
+  const handleNotesChange = useCallback((e) => {
+    setCurrentRecord(prev => ({ ...prev, notes: e.target.value }));
+  }, []);
+
+  const handleMeasurementTimeChange = useCallback((e) => {
+    setCurrentRecord(prev => ({ ...prev, measurementTime: e.target.value }));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -914,256 +1214,6 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
     </Box>
   );
 
-  // Mobile Add Record Content
-  const MobileAddRecord = () => {
-    // Memoize the label to prevent unnecessary re-renders
-    const medicalRecordLabel = useMemo(() => t('medicalRecordLabel'), []);
-    
-    return (
-      <Box sx={{ p: 0 }}>
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
-          {t('addNewRecord')}
-        </Typography>
-        <Box sx={{ px: 1 }}>
-          <Paper elevation={3} sx={{ p: 2 }}>
-            <Box component="form" onSubmit={handleSubmit}>
-              
-              <OptimizedTextField
-                label={t('dateTimeLabel')}
-                type="datetime-local"
-                name="measurementTime"
-                value={currentRecord.measurementTime}
-                onChange={memoizedHandleInputChange}
-                required
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  step: 60, // 1 minute steps
-                  autoComplete: 'off',
-                  inputMode: 'numeric',
-                }}
-              />
-              <OptimizedTextField
-                label={requiresTwoValues() ? t('systolicPressure') : medicalRecordLabel}
-                type="text"
-                name="value"
-                value={currentRecord.value ?? ''}
-                onChange={memoizedHandleInputChange}
-                required
-                inputProps={{
-                  inputMode: 'decimal',
-                  autoComplete: 'off',
-                  autoCorrect: 'off',
-                  autoCapitalize: 'off',
-                  spellCheck: 'false',
-                }}
-              />
-              {requiresTwoValues() && (
-                <OptimizedTextField
-                  label={t('diastolicPressure')}
-                  type="text"
-                  name="value2"
-                  value={currentRecord.value2 ?? ''}
-                  onChange={memoizedHandleInputChange}
-                  required
-                  inputProps={{
-                    inputMode: 'decimal',
-                    autoComplete: 'off',
-                    autoCorrect: 'off',
-                    autoCapitalize: 'off',
-                    spellCheck: 'false',
-                  }}
-                />
-              )}
-              <OptimizedTextField
-                label={t('contextImageValue')}
-                type="text"
-                name="value3"
-                value={currentRecord.value3 ?? ''}
-                onChange={memoizedHandleInputChange}
-                inputProps={{
-                  inputMode: 'decimal',
-                  autoComplete: 'off',
-                  autoCorrect: 'off',
-                  autoCapitalize: 'off',
-                  spellCheck: 'false',
-                }}
-                helperText={t('contextImageValueHelp')}
-              />
-              <OptimizedTextField
-                label={t('notesLabel')}
-                name="notes"
-                value={currentRecord.notes}
-                onChange={memoizedHandleInputChange}
-                multiline
-                rows={3}
-                helperText={t('optionalNotes')}
-              />
-              <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
-                <Button 
-                  variant="outlined" 
-                  fullWidth
-                  onClick={() => handleMobilePageChange('dashboard')}
-                >
-                  {t('cancel')}
-                </Button>
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  fullWidth
-                  data-testid="add-new-record-button"
-                >
-                  {t('addRecordButton')}
-                </Button>
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
-      </Box>
-    );
-  };
-  
-  // Mobile Edit Record Content (reuse add form, but with different button text)
-  const MobileEditRecord = () => {
-    
-    return (
-      <Box sx={{ p: 0 }}>
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2, px: 1 }}>
-          {t('editRecord')}
-        </Typography>
-        <Box sx={{ px: 1 }}>
-          <Paper elevation={3} sx={{ p: 2 }}>
-            <Box component="form" onSubmit={handleSubmit}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel id="mobile-edit-value-type-label">{t('medicalValueTypeLabel')}</InputLabel>
-                <Select
-                  data-testid="value-type-dropdown"
-                  labelId="mobile-edit-value-type-label"
-                  value={currentRecord.valueTypeId}
-                  label={t('medicalValueTypeLabel')}
-                  name="valueTypeId"
-                  onChange={handleInputChange}
-                  inputProps={{ 'data-testid': 'value-type-native-input' }}
-                  MenuProps={{
-                    PaperProps: {
-                      sx: { 
-                        maxHeight: 200
-                      }
-                    },
-                    anchorOrigin: {
-                      vertical: 'bottom',
-                      horizontal: 'left',
-                    },
-                    transformOrigin: {
-                      vertical: 'top',
-                      horizontal: 'left',
-                    },
-                    disableScrollLock: true,
-                    keepMounted: false,
-                    getContentAnchorEl: null
-                  }}
-                >
-                  {valueTypes.map((valueType) => (
-                    <MenuItem key={valueType.id} value={valueType.id} data-testid={`value-type-option-${valueType.id}`}>
-                      {getLocalizedValueTypeName(valueType)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <OptimizedTextField
-                label={t('dateTimeLabel')}
-                type="datetime-local"
-                name="measurementTime"
-                value={currentRecord.measurementTime}
-                onChange={memoizedHandleInputChange}
-                required
-                InputLabelProps={{ shrink: true }}
-                inputProps={{
-                  step: 60,
-                  autoComplete: 'off',
-                  inputMode: 'numeric',
-                }}
-              />
-              <OptimizedTextField
-                label={requiresTwoValues() ? t('systolicPressure') : t('medicalRecordLabel')}
-                type="text"
-                name="value"
-                value={currentRecord.value ?? ''}
-                onChange={memoizedHandleInputChange}
-                required
-                inputProps={{
-                  inputMode: 'decimal',
-                  autoComplete: 'off',
-                  autoCorrect: 'off',
-                  autoCapitalize: 'off',
-                  spellCheck: 'false',
-                }}
-              />
-              {requiresTwoValues() && (
-                <OptimizedTextField
-                  label={t('diastolicPressure')}
-                  type="text"
-                  name="value2"
-                  value={currentRecord.value2 ?? ''}
-                  onChange={memoizedHandleInputChange}
-                  required
-                  inputProps={{
-                    inputMode: 'decimal',
-                    autoComplete: 'off',
-                    autoCorrect: 'off',
-                    autoCapitalize: 'off',
-                    spellCheck: 'false',
-                  }}
-                />
-              )}
-              <OptimizedTextField
-                label={t('contextImageValue')}
-                type="text"
-                name="value3"
-                value={currentRecord.value3 ?? ''}
-                onChange={memoizedHandleInputChange}
-                inputProps={{
-                  inputMode: 'decimal',
-                  autoComplete: 'off',
-                  autoCorrect: 'off',
-                  autoCapitalize: 'off',
-                  spellCheck: 'false',
-                }}
-                helperText={t('contextImageValueHelp')}
-              />
-              <OptimizedTextField
-                label={t('notesLabel')}
-                name="notes"
-                value={currentRecord.notes}
-                onChange={memoizedHandleInputChange}
-                multiline
-                rows={3}
-                helperText={t('optionalNotes')}
-              />
-              <Box sx={{ mt: 2, display: 'flex', gap: 1.5 }}>
-                <Button 
-                  variant="outlined" 
-                  fullWidth
-                  onClick={() => handleMobilePageChange('dashboard')}
-                >
-                  {t('cancel')}
-                </Button>
-                <Button 
-                  type="submit" 
-                  variant="contained" 
-                  fullWidth
-                  data-testid="save-record-button"
-                >
-                  {t('update')}
-                </Button>
-              </Box>
-            </Box>
-          </Paper>
-        </Box>
-      </Box>
-    );
-  };
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* Header is rendered at the top-level layout, not here. */}
@@ -1197,8 +1247,33 @@ function Dashboard({ mobilePage, onMobilePageChange }) {
           <Container maxWidth="xs" sx={{ py: 0, pt: 2, flexGrow: 1, px: 0 }}>
             {mobilePage === 'dashboard' && <MobileDashboard />}
             {mobilePage === 'analytics' && <MobileAnalytics />}
-            {mobilePage === 'add' && <MobileAddRecord />}
-            {mobilePage === 'edit' && <MobileEditRecord />}
+            {mobilePage === 'add' && <MobileAddRecord 
+              currentRecord={currentRecord}
+              handleSubmit={handleSubmit}
+              handleValueChange={handleValueChange}
+              handleValue2Change={handleValue2Change}
+              handleValue3Change={handleValue3Change}
+              handleNotesChange={handleNotesChange}
+              handleMeasurementTimeChange={handleMeasurementTimeChange}
+              handleMobilePageChange={handleMobilePageChange}
+              requiresTwoValues={requiresTwoValues}
+              t={t}
+            />}
+            {mobilePage === 'edit' && <MobileEditRecord 
+              currentRecord={currentRecord}
+              handleSubmit={handleSubmit}
+              handleValueChange={handleValueChange}
+              handleValue2Change={handleValue2Change}
+              handleValue3Change={handleValue3Change}
+              handleNotesChange={handleNotesChange}
+              handleMeasurementTimeChange={handleMeasurementTimeChange}
+              handleMobilePageChange={handleMobilePageChange}
+              handleInputChange={handleInputChange}
+              requiresTwoValues={requiresTwoValues}
+              valueTypes={valueTypes}
+              getLocalizedValueTypeName={getLocalizedValueTypeName}
+              t={t}
+            />}
           </Container>
         ) : (
           // Desktop Layout
